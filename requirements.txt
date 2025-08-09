@@ -1,0 +1,12 @@
+fastapi
+uvicorn[standard]
+sqlalchemy
+psycopg2-binary
+pydantic
+python-jose
+passlib[bcrypt]
+supabase
+python-multipart
+# pip install pydantic-settings
+# pip install pydantic[email]
+
