@@ -28,6 +28,9 @@ core_backend/
 │   └── __init__.py
 │
 └── requirements.txt
+└── .gitignore
+└── .env
+└── README.md
 ```
 
 
