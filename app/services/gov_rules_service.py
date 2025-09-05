@@ -117,6 +117,15 @@ class GovRulesEngine:
         rules["A"] = rules["antecedents"].apply(lambda s: sorted(list(s)))
         rules["C"] = rules["consequents"].apply(lambda s: sorted(list(s)))
 
+        # --- add near the top of the file (below imports) ---
+        def _has_unknown(items) -> bool:
+            # returns True if any token contains "unknown" (case-insensitive)
+            return any("unknown" in str(x).lower() for x in items)
+
+      
+        # NEW: drop any rule that has "unknown" in A or C (case-insensitive)
+        rules = rules[~rules["A"].apply(_has_unknown)]
+        rules = rules[~rules["C"].apply(_has_unknown)]
         def contains_all(container: List[str], required: List[str]) -> bool:
             s = set(container)
             return all(r in s for r in required)
