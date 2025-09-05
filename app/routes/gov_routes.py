@@ -3,7 +3,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from pathlib import Path
 from app.models.gov_rules import RunRequest
 from app.services.gov_rules_service import GovRulesEngine
-from app.utils.role_check import require_role  # <-- your existing role dependency
+from app.utils.deps import require_role  # <-- your existing role dependency
 
 router = APIRouter(prefix="/gov/rules", tags=["gov-rules"])
 
