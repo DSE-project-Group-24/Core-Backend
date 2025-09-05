@@ -33,3 +33,11 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+
+
+
+@app.get("/_routes")
+def _routes():
+    return [{"path": r.path, "methods": list(getattr(r, "methods", []))} for r in app.routes]
