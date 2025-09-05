@@ -1,30 +1,20 @@
+
 from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
-# from .routers import auth, nurse, patients, admin
-from .routers import admin
-from .config import settings
+from app.routes.auth_routes import router as auth_router
+from app.routes.hospital_routes import router as hospital_router
+from app.routes.nurse_routes import router as nurse_router
+from app.routes.doctor_routes import router as doctor_router
+from app.routes.patient_routes import router as patient_router
+from app.routes.accident_routes import router as accident_router
+from app.routes.medical_routes import router as medical_router
 
-app = FastAPI(
-    title="Hospital Accicent Data Core Backend",
-    description="Core backend service for user auth, data CRUD, and hospital-level role-based access.",
-    version="1.0.0"
-)
+app = FastAPI(title="FastAPI + Supabase")
 
-# CORS
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=settings.ALLOWED_ORIGINS,
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
-# Routers
-# app.include_router(auth.router, prefix="/api/auth", tags=["Authentication"])
-# app.include_router(nurse.router, prefix="/api/nurse", tags=["Nurse Functions"])
-# app.include_router(patients.router, prefix="/api/patients", tags=["Patient Management"])
-app.include_router(admin.router, prefix="/api/admin", tags=["Hospital Admin"])
-
-@app.get("/")
-def root():
-    return {"message": "Core Backend API is running"}
+# Register routes
+app.include_router(auth_router, prefix="/auth", tags=["Users"])
+app.include_router(hospital_router, prefix="/hospital", tags=["Hospitals"])
+app.include_router(nurse_router, prefix="/nurse", tags=["Nurses"])
+app.include_router(doctor_router, prefix="/doctor", tags=["Doctors"])
+app.include_router(patient_router, prefix="/patients", tags=["Patients"])
+app.include_router(accident_router, prefix="/accidents", tags=["Accident Records"])
+app.include_router(medical_router, prefix="/medical", tags=["Medical Records"])

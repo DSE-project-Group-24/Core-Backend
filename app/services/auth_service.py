@@ -1,101 +1,92 @@
-from sqlalchemy.orm import Session
-from uuid import UUID
-from passlib.context import CryptContext
-from fastapi import HTTPException, status
-from datetime import datetime, timedelta
-import jwt
+from fastapi import HTTPException
+from app.db import get_supabase
+from postgrest.exceptions import APIError
+from app.models.user import UserIn, UserLogin
+from app.utils.auth import hash_password, verify_password, create_access_token, create_refresh_token
 
-from ..models.user import User, UserCreate, UserUpdate, UserRole
-from ..config import settings
 
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
-# Password hashing
-def hash_password(password: str) -> str:
-    return pwd_context.hash(password)
 
-def verify_password(plain_password: str, hashed_password: str) -> bool:
-    return pwd_context.verify(plain_password, hashed_password)
+# Role-specific registration functions
+def register_nurse_service(user: UserIn):
+    return register_user_service(user, "nurse")
 
-# JWT token creation
-def create_access_token(data: dict, expires_delta: timedelta | None = None) -> str:
-    to_encode = data.copy()
-    expire = datetime.utcnow() + (expires_delta or timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES))
-    to_encode.update({"exp": expire})
-    encoded_jwt = jwt.encode(to_encode, settings.JWT_SECRET, algorithm=settings.JWT_ALGORITHM)
-    return encoded_jwt
+def register_doctor_service(user: UserIn):
+    return register_user_service(user, "doctor")
 
-# Create user
-def create_user(db: Session, user: UserCreate) -> User:
+def register_hospital_administrator_service(user: UserIn):
+    return register_user_service(user, "hospital_administrator")
+
+def register_government_service(user: UserIn):
+    return register_user_service(user, "government_personnel")
+
+
+# Login function
+def login_user_service(credentials: UserLogin):
+    supabase = get_supabase()
+    resp = supabase.table("User").select("*").eq("email", credentials.email).execute()
+    data = handle_response(resp)
+
+    if not data:
+        raise HTTPException(status_code=401, detail="Invalid email or password")
+
+    user = data[0]
+
+    # Check hashed password
+    if not verify_password(credentials.password, user["password"]):
+        raise HTTPException(status_code=401, detail="Invalid email or password")
+
+    # Create tokens
+    token_data = {"sub": str(user["user_id"]), "email": user["email"], "role": user["role"]}
+    access_token = create_access_token(token_data)
+    refresh_token = create_refresh_token(token_data)
+
+    return {
+        "access_token": access_token,
+        "refresh_token": refresh_token,
+    }
+
+
+
+
+
+def handle_response(resp):
+    """Standardize error handling for supabase-py responses."""
+    if getattr(resp, "error", None):
+        raise HTTPException(status_code=400, detail=str(resp.error))
+    return resp.data
+
+def list_users_service(limit: int, offset: int):
+    supabase = get_supabase()
+    start = offset
+    end = offset + limit - 1
+    resp = supabase.table("User").select("*").range(start, end).execute()
+    data = handle_response(resp)
+    return data or []
+
+def register_user_service(user: UserIn, role: str | None = None):
+    supabase = get_supabase()
     hashed_pw = hash_password(user.password)
-    db_user = User(
-        email=user.email,
-        full_name=user.full_name,
-        hashed_password=hashed_pw,
-        role=user.role,
-        hospital_id=user.hospital_id,
-        is_active=True,
-    )
-    db.add(db_user)
-    db.commit()
-    db.refresh(db_user)
-    return db_user
 
-# List users by hospital (exclude admins and govt)
-def list_users_by_hospital(db: Session, hospital_id: UUID):
-    return (
-        db.query(User)
-        .filter(
-            User.hospital_id == hospital_id,
-            User.role.in_([UserRole.nurse, UserRole.doctor])
-        )
-        .all()
-    )
+    user_role = role if role else user.role
 
-# Update user
-def update_user(db: Session, user_id: UUID, user_update: UserUpdate, hospital_id: UUID) -> User:
-    user = db.query(User).filter(User.id == user_id, User.hospital_id == hospital_id).first()
-    if not user:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
-
-    update_data = user_update.dict(exclude_unset=True)
-    if "password" in update_data:
-        update_data["hashed_password"] = hash_password(update_data.pop("password"))
-
-    for field, value in update_data.items():
-        setattr(user, field, value)
-
-    db.commit()
-    db.refresh(user)
-    return user
-
-# Delete user
-def delete_user(db: Session, user_id: UUID, hospital_id: UUID):
-    user = db.query(User).filter(User.id == user_id, User.hospital_id == hospital_id).first()
-    if not user:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
-    db.delete(user)
-    db.commit()
-
-# Dependency to get current user from JWT (used in utils/role_check.py)
-def get_current_user(db: Session, token: str) -> User:
-    from fastapi import HTTPException, Security
-    from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-    import jwt
-
-    security = HTTPBearer()
-    credentials: HTTPAuthorizationCredentials = Security(security)
-    if not credentials:
-        raise HTTPException(status_code=401, detail="Invalid authorization")
     try:
-        payload = jwt.decode(token, settings.JWT_SECRET, algorithms=[settings.JWT_ALGORITHM])
-        user_id: str = payload.get("sub")
-        if user_id is None:
-            raise HTTPException(status_code=401, detail="Invalid token payload")
-    except jwt.PyJWTError:
-        raise HTTPException(status_code=401, detail="Could not validate credentials")
+        resp = supabase.table("User").insert({
+            "email": user.email,
+            "password": hashed_pw,
+            "name": user.name,
+            "nic": user.nic,
+            "role": user_role
+        }).execute()
+    except APIError as e:
+        if getattr(e, "code", None) == "23505":
+            raise HTTPException(status_code=400, detail="Email already registered")
+        raise HTTPException(status_code=400, detail=str(e))
 
-    user = db.query(User).filter(User.id == user_id).first()
-    if not user or not user.is_active:
-        raise HTTPException(status_code=401, detail="User not found or inactive")
-    return user
+    data = handle_response(resp)
+    if not data:
+        raise HTTPException(status_code=400, detail="Failed to register user")
+    return data[0]
+
+
+

@@ -1,44 +1,109 @@
-from sqlalchemy.orm import Session
-from uuid import UUID
-from fastapi import HTTPException, status
-from ..models.patient import Patient, PatientCreate, PatientUpdate
-from ..models.user import User, UserRole
+from fastapi import HTTPException
+from fastapi.encoders import jsonable_encoder
+from app.db import get_supabase
+from app.models.patient import PatientCreate, PatientUpdate
 
-def list_patients(db: Session, user: User):
-    # Doctors and Admins see patients only from their hospital
-    return db.query(Patient).filter(Patient.hospital_id == user.hospital_id).all()
+def create_patient_service(patient: PatientCreate, hospital_id: str):
+    supabase = get_supabase()
 
-def create_patient(db: Session, patient_in: PatientCreate, creator_id: UUID):
-    patient = Patient(
-        name=patient_in.name,
-        ward=patient_in.ward,
-        bed_number=patient_in.bed_number,
-        hospital_id=patient_in.hospital_id,
-        severity=patient_in.severity,
-        created_by=creator_id,
+    if not hospital_id:
+        raise HTTPException(status_code=400, detail="Hospital ID is required to create a patient.")
+
+    # Create patient
+    payload = jsonable_encoder(patient, by_alias=True)
+    resp = supabase.table("Patient").insert(payload).execute()
+
+    if not resp.data:
+        raise HTTPException(status_code=500, detail="Failed to create patient.")
+
+    patient_id = resp.data[0]["patient_id"]
+
+    try:
+        # Check if hospital exists
+        hospital_resp = (
+            supabase.table("Hospital")
+            .select("hospital_id")
+            .eq("hospital_id", hospital_id)
+            .single()
+            .execute()
+        )
+        if not hospital_resp.data:
+            # rollback patient
+            supabase.table("Patient").delete().eq("patient_id", patient_id).execute()
+            raise HTTPException(status_code=404, detail="Hospital not found.")
+
+        # Add patient to hospital
+        hp_resp = (
+            supabase.table("Hospital_Patient")
+            .insert({"patient_id": patient_id, "hospital_id": hospital_id})
+            .execute()
+        )
+
+        if not hp_resp.data:
+            # rollback patient
+            supabase.table("Patient").delete().eq("patient_id", patient_id).execute()
+            raise HTTPException(status_code=500, detail="Failed to associate patient with hospital.")
+
+    except Exception as e:
+        # rollback patient
+        supabase.table("Patient").delete().eq("patient_id", patient_id).execute()
+        raise HTTPException(status_code=500, detail=f"Failed to associate patient with hospital: {str(e)}")
+
+    patient_data = resp.data[0]
+    patient_data["Hospital ID"] = hospital_id
+    return patient_data
+
+
+def edit_patient_service(patient_id: str, patient: PatientUpdate):
+    supabase = get_supabase()
+    payload = jsonable_encoder(patient, by_alias=True, exclude_unset=True)
+    print("patient_id:", patient_id)
+    print("payload:", payload)
+    # Perform update
+    update_resp = supabase.table("Patient").update(payload).eq("patient_id", patient_id).execute()
+    if not update_resp.data:
+        raise HTTPException(status_code=404, detail="Patient not found or not updated.")
+
+    # Fetch full record
+    resp = supabase.table("Patient").select("*").eq("patient_id", patient_id).single().execute()
+    return resp.data
+
+def get_all_patients_service():
+    supabase = get_supabase()
+    resp = supabase.table("Patient").select("*").execute()
+    return resp.data or []
+
+def get_hospital_patients_service(hospital_id: str):
+    supabase = get_supabase()
+    # Query Hospital_Patient table to get patient IDs associated with the hospital
+    resp = (
+        supabase.table("Hospital_Patient")
+        .select("patient_id")
+        .eq("hospital_id", hospital_id)
+        .execute()
     )
-    db.add(patient)
-    db.commit()
-    db.refresh(patient)
-    return patient
+    
+    if not resp.data:
+        return []
+    
+    # Extract patient IDs
+    patient_ids = [item["patient_id"] for item in resp.data]
+    
+    # Get patient details for these IDs
+    patients_resp = supabase.table("Patient").select("*").in_("patient_id", patient_ids).execute()
+    return patients_resp.data or []
 
-def update_patient(db: Session, patient_id: UUID, patient_update: PatientUpdate, user: User):
-    patient = db.query(Patient).filter(Patient.id == patient_id, Patient.hospital_id == user.hospital_id).first()
-    if not patient:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Patient not found")
+def get_patient_by_id_service(patient_id: str):
+    supabase = get_supabase()
+    resp = supabase.table("Patient").select("*").eq("patient_id", patient_id).single().execute()
+    if not resp.data:
+        raise HTTPException(status_code=404, detail="Patient not found.")
+    return resp.data
 
-    # Optionally enforce: only admins or doctors from same hospital can update
-    for field, value in patient_update.dict(exclude_unset=True).items():
-        setattr(patient, field, value)
 
-    db.commit()
-    db.refresh(patient)
-    return patient
-
-def delete_patient(db: Session, patient_id: UUID, user: User):
-    patient = db.query(Patient).filter(Patient.id == patient_id, Patient.hospital_id == user.hospital_id).first()
-    if not patient:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Patient not found")
-
-    db.delete(patient)
-    db.commit()
+def get_patient_by_nic_service(nic: str):
+    supabase = get_supabase()
+    resp = supabase.table("Patient").select("*").eq("nic", nic).single().execute()
+    if not resp.data:
+        raise HTTPException(status_code=404, detail="Patient not found.")
+    return resp.data

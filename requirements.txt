@@ -1,12 +1,14 @@
+passlib[bcrypt] 
+python-jose[cryptography] 
+python-dotenv
 fastapi
+pydantic[email]
 uvicorn[standard]
-sqlalchemy
-psycopg2-binary
 pydantic
-python-jose
-passlib[bcrypt]
+pydantic-settings
+sqlalchemy
+databases
+python-dotenv
+psycopg2-binary 
 supabase
-python-multipart
-# pip install pydantic-settings
-# pip install pydantic[email]
-
+bcrypt==4.0.1
