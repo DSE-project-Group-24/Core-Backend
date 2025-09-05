@@ -145,7 +145,7 @@ class GovRulesEngine:
 
         by = sort_by if sort_by in {"lift", "support", "confidence"} else "lift"
         ascending = (sort_order == "asc")
-        rules = rules.sort_values(by=by, ascending=ascending).head(max_rules)
+        rules = rules.sort_values(by=by, ascending=ascending).head(20)
 
         out = [
             {

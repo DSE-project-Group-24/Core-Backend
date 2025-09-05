@@ -21,7 +21,7 @@ def get_engine() -> GovRulesEngine:
 def bootstrap(_: None = Depends(require_role("government"))):
     eng = get_engine()
     clean_tokens = [t for t in eng.tokens if "unknown" not in t.lower()]
-    return {"tokens": clean_tokens, "defaults": {"min_support": 0.02, "min_confidence": 0.3}}
+    return {"tokens": clean_tokens, "defaults": {"min_support": 0.05, "min_confidence": 0.3}}
     
 
 @router.post("/run")
