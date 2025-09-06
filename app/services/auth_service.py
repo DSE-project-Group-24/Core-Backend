@@ -44,6 +44,7 @@ def login_user_service(credentials: UserLogin):
     return {
         "access_token": access_token,
         "refresh_token": refresh_token,
+        "role": user["role"]
     }
 
 
