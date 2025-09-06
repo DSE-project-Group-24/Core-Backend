@@ -1,5 +1,6 @@
 
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from app.routes.auth_routes import router as auth_router
 from app.routes.hospital_routes import router as hospital_router
 from app.routes.nurse_routes import router as nurse_router
@@ -10,6 +11,19 @@ from app.routes.medical_routes import router as medical_router
 
 app = FastAPI(title="FastAPI + Supabase")
 
+
+origins = [
+    "http://localhost:5173",  # React Vite default
+    "http://localhost:3000",  # React CRA default
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,  # Or ["*"] for all
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 # Register routes
 app.include_router(auth_router, prefix="/auth", tags=["Users"])
 app.include_router(hospital_router, prefix="/hospital", tags=["Hospitals"])

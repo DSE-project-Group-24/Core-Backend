@@ -1,7 +1,12 @@
 from fastapi import APIRouter, Depends, HTTPException, Path
 from app.models.hospital import HospitalCreate, HospitalUpdate
 from app.models.hospital_staff import AssignStaffToHospital
-from app.services.hospital_staff_service import add_doctor_to_hospital_service, add_nurse_to_hospital_service
+from app.services.hospital_staff_service import (
+    add_doctor_to_hospital_service,
+    add_nurse_to_hospital_service,
+    get_doctors_count_service,
+    get_nurses_count_service, get_patients_count_service
+)
 from app.services.hospital_service import (
     create_hospital_service,
     get_all_hospitals_service,
@@ -10,6 +15,7 @@ from app.services.hospital_service import (
     edit_hospital_service
 )
 from app.auth.dependencies import get_current_user, hospital_admin_required
+from app.auth.hospital_dependency import get_user_hospital_id
 
 router = APIRouter()
 
@@ -36,10 +42,31 @@ def edit_hospital(hospital_id: str, hospital: HospitalUpdate):
 
 # Assign doctor to hospital (hospital admin only)
 @router.post("/assign-doctor", dependencies=[Depends(hospital_admin_required)])
-def assign_doctor(data: AssignStaffToHospital):
-    return add_doctor_to_hospital_service(data)
+async def assign_doctor(data: dict, hospital_id: str = Depends(get_user_hospital_id)):
+    staff_data = AssignStaffToHospital(user_id=data["user_id"], hospital_id=hospital_id)
+    return add_doctor_to_hospital_service(staff_data)
 
 # Assign nurse to hospital (hospital admin only)
 @router.post("/assign-nurse", dependencies=[Depends(hospital_admin_required)])
-def assign_nurse(data: AssignStaffToHospital):
-    return add_nurse_to_hospital_service(data)
+async def assign_nurse(data: dict, hospital_id: str = Depends(get_user_hospital_id)):
+    staff_data = AssignStaffToHospital(user_id=data["user_id"], hospital_id=hospital_id)
+    return add_nurse_to_hospital_service(staff_data)
+
+# Get count of doctors in hospital (hospital admin only)
+@router.get("/doctors-count", dependencies=[Depends(hospital_admin_required)])
+async def get_doctors_count(hospital_id: str = Depends(get_user_hospital_id)):
+    """Get the count of all doctors in the logged-in hospital administrator's hospital"""
+    return get_doctors_count_service(hospital_id)
+
+# Get count of nurses in hospital (hospital admin only)
+@router.get("/nurses-count", dependencies=[Depends(hospital_admin_required)])
+async def get_nurses_count(hospital_id: str = Depends(get_user_hospital_id)):
+    """Get the count of all nurses in the logged-in hospital administrator's hospital"""
+    return get_nurses_count_service(hospital_id)
+
+# Get count of patients in hospital (hospital admin only)
+@router.get("/patients-count", dependencies=[Depends(hospital_admin_required)])
+async def get_patients_count(hospital_id: str = Depends(get_user_hospital_id)):
+    """Get the count of all patients in the logged-in hospital administrator's hospital"""
+    return get_patients_count_service(hospital_id)
+

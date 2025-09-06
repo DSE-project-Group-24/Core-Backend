@@ -34,11 +34,18 @@ async def get_user_hospital_id(user: dict = Depends(get_current_user)):
         )
     # print(f"table_name: {table_name}")
     # Get hospital ID from appropriate table
-    resp = supabase.table(table_name).select("hospital_id").eq("user_id", user_id).single().execute()
-    if not resp.data:
+    try:
+        resp = supabase.table(table_name).select("hospital_id").eq("user_id", user_id).execute()
+        
+        if not resp.data or len(resp.data) == 0:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"No hospital found for this {role}"
+            )
+            
+        return resp.data[0].get("hospital_id")
+    except Exception as e:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"No hospital found for this {role}"
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error retrieving hospital: {str(e)}"
         )
-    
-    return resp.data.get("hospital_id")
