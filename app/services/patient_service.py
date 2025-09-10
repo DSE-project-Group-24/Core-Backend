@@ -68,13 +68,14 @@ def edit_patient_service(patient_id: str, patient: PatientUpdate):
     resp = supabase.table("Patient").select("*").eq("patient_id", patient_id).single().execute()
     return resp.data
 
-def get_all_patients_service():
-    supabase = get_supabase()
-    resp = supabase.table("Patient").select("*").execute()
-    return resp.data or []
+# def get_all_patients_service():
+#     supabase = get_supabase()
+#     resp = supabase.table("Patient").select("*").execute()
+#     return resp.data or []
 
 def get_hospital_patients_service(hospital_id: str):
     supabase = get_supabase()
+
     # Query Hospital_Patient table to get patient IDs associated with the hospital
     resp = (
         supabase.table("Hospital_Patient")
@@ -82,16 +83,29 @@ def get_hospital_patients_service(hospital_id: str):
         .eq("hospital_id", hospital_id)
         .execute()
     )
-    
+
     if not resp.data:
         return []
-    
+
     # Extract patient IDs
     patient_ids = [item["patient_id"] for item in resp.data]
-    
+
     # Get patient details for these IDs
-    patients_resp = supabase.table("Patient").select("*").in_("patient_id", patient_ids).execute()
-    return patients_resp.data or []
+    patients_resp = (
+        supabase.table("Patient")
+        .select("*")
+        .in_("patient_id", patient_ids)
+        .execute()
+    )
+
+    patients = patients_resp.data or []
+
+    # 🔥 Add hospital_id to every patient dict
+    for p in patients:
+        p["Hospital ID"] = hospital_id
+
+    return patients
+
 
 def get_patient_by_id_service(patient_id: str):
     supabase = get_supabase()

@@ -40,7 +40,7 @@ app.include_router(gov_router, prefix="/gov/rules", tags=["Government"])
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
-        "http://localhost:5173",   # your React dev server
+        "http://localhost:5174",   # your React dev server
         "http://127.0.0.1:5173"    # optional alternative
     ],
     allow_credentials=True,
