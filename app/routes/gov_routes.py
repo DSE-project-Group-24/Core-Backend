@@ -3,11 +3,11 @@ from fastapi import APIRouter, Depends, HTTPException
 from pathlib import Path
 from app.models.gov_rules import RunRequest
 from app.services.gov_rules_service import GovRulesEngine
-from app.utils.deps import require_role  # <-- your existing role dependency
+from app.auth.dependencies import government_personnel_required 
 
 router = APIRouter()
 
-# Lazily init a singleton engine (adjust path as needed)
+
 ENGINE: GovRulesEngine | None = None
 
 def get_engine() -> GovRulesEngine:
@@ -18,14 +18,14 @@ def get_engine() -> GovRulesEngine:
     return ENGINE
 
 @router.get("/bootstrap")
-def bootstrap(_: None = Depends(require_role("government"))):
+def bootstrap():
     eng = get_engine()
     clean_tokens = [t for t in eng.tokens if "unknown" not in t.lower()]
     return {"tokens": clean_tokens, "defaults": {"min_support": 0.05, "min_confidence": 0.3}}
     
 
-@router.post("/run")
-def run(req: RunRequest, _: None = Depends(require_role("government"))):
+@router.post("/run", dependencies=[Depends(government_personnel_required)])
+def run(req: RunRequest):
     eng = get_engine()
     try:
         result = eng.run_rules(

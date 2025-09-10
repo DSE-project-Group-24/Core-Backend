@@ -3,6 +3,7 @@ from typing import List, Dict, Any
 import pandas as pd
 from mlxtend.frequent_patterns import apriori, association_rules
 
+
 # ---- Safe coercion helpers ----
 TRUE_SET  = {"true", "t", "yes", "y", "1"}
 FALSE_SET = {"false", "f", "no", "n", "0"}

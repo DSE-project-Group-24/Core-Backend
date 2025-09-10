@@ -18,7 +18,7 @@ app = FastAPI(title="FastAPI + Supabase")
 origins = [
     "http://localhost:5173",  
     "http://localhost:3000",  
-    "http://localhost:5173"
+    "http://localhost:5174"
 ]
 
 app.add_middleware(
@@ -42,10 +42,7 @@ app.include_router(prediction_router, prefix="/predictions", tags=["Predictions"
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:5173",   # your React dev server
-        "http://127.0.0.1:5173"    # optional alternative
-    ],
+    allow_origins=origins,
     # allow_origins=['*'],
     allow_credentials=True,
     allow_methods=["*"],
