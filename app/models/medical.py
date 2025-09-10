@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 from typing import Optional
 from decimal import Decimal
 
@@ -19,12 +19,13 @@ class TreatmentUpdate(TreatmentBase):
     accident_id: Optional[str] = None
 
 class TreatmentOut(TreatmentBase):
+    model_config = ConfigDict(
+        from_attributes=True,
+        validate_by_name=True
+    )
+    
     treatment_id: str
     hospital_id: str
-    
-    class Config:
-        from_attributes = True
-        validate_by_name = True
 
 # Transfer Model
 class TransferBase(BaseModel):
@@ -43,11 +44,12 @@ class TransferUpdate(TransferBase):
     to_hospital: Optional[str] = None
 
 class TransferOut(TransferBase):
-    transfer_id: str
+    model_config = ConfigDict(
+        from_attributes=True,
+        validate_by_name=True
+    )
     
-    class Config:
-        from_attributes = True
-        validate_by_name = True
+    transfer_id: str
 
 # Injury Model
 class InjuryBase(BaseModel):
@@ -64,11 +66,12 @@ class InjuryUpdate(InjuryBase):
     accident_id: Optional[str] = None
 
 class InjuryOut(InjuryBase):
-    injury_no: str
+    model_config = ConfigDict(
+        from_attributes=True,
+        validate_by_name=True
+    )
     
-    class Config:
-        from_attributes = True
-        validate_by_name = True
+    injury_no: str
 
 # Management Model (using "managemeny" as in schema)
 class ManagementBase(BaseModel):
@@ -82,8 +85,9 @@ class ManagementUpdate(ManagementBase):
     accident_id: Optional[str] = None
 
 class ManagementOut(ManagementBase):
-    management_id: str
+    model_config = ConfigDict(
+        from_attributes=True,
+        validate_by_name=True
+    )
     
-    class Config:
-        from_attributes = True
-        validate_by_name = True
+    management_id: str

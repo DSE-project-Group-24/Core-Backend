@@ -137,6 +137,8 @@ The API provides the following endpoints:
 - `/patients` - Patient management
 - `/accidents` - Accident records management
 - `/medical` - Medical records management
+- `/gov/rules` - Government rules management
+- `/predictions` - SARIMA model forecasting and predictions
 
 ## Development
 

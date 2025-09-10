@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 from typing import Optional
 from datetime import date, time
 from decimal import Decimal
@@ -46,8 +46,9 @@ class AccidentRecordUpdate(AccidentRecordBase):
     created_by: Optional[str] = None
 
 class AccidentRecordOut(AccidentRecordBase):
-    accident_id: str
+    model_config = ConfigDict(
+        from_attributes=True,
+        validate_by_name=True
+    )
     
-    class Config:
-        from_attributes = True
-        validate_by_name = True
+    accident_id: str
