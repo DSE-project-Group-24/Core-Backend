@@ -32,3 +32,6 @@ app.include_router(doctor_router, prefix="/doctor", tags=["Doctors"])
 app.include_router(patient_router, prefix="/patients", tags=["Patients"])
 app.include_router(accident_router, prefix="/accidents", tags=["Accident Records"])
 app.include_router(medical_router, prefix="/medical", tags=["Medical Records"])
+
+
+
