@@ -44,3 +44,12 @@ def nurse_required(user: dict = Depends(get_current_user)):
             detail="Only nurses can perform this action."
         )
     return user
+
+# Only allow government personnel
+def government_personnel_required(user: dict = Depends(get_current_user)):
+    if user.get("role") != "government_personnel":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only government personnel can perform this action."
+        )
+    return user

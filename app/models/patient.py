@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 from typing import Optional
 from datetime import date
 
@@ -38,9 +38,10 @@ class PatientUpdate(BaseModel):
     blood_group: Optional[str] = Field(None, alias="Blood Group")
 
 class PatientOut(PatientBase):
+    model_config = ConfigDict(
+        from_attributes=True,
+        validate_by_name=True
+    )
+    
     patient_id: str
     hospital_id: str = Field(..., alias="Hospital ID")
-
-    class Config:
-        from_attributes = True
-        validate_by_name = True
