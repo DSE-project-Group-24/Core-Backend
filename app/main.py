@@ -17,13 +17,14 @@ from app.routes.accident_analytics_routes import router as analytics_router
 
 
 
-app = FastAPI(title="FastAPI + Supabase")
+app = FastAPI(title="FastAPI + Supabase", redirect_slashes=False)
 
 
 origins = [
     "http://localhost:5173",  
     "http://localhost:3000",  
-    "http://localhost:5174"
+    "http://localhost:5174",
+    "http://127.0.0.1:5173"
 ]
 
 app.add_middleware(
