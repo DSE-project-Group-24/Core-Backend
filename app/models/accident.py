@@ -1,12 +1,15 @@
 from pydantic import BaseModel, Field, ConfigDict
 from typing import Optional
-from datetime import date, time
-from decimal import Decimal
+from datetime import date
 
-# Accident Record Model
+# Pydantic v2 models
+
 class AccidentRecordBase(BaseModel):
     patient_id: str
-    created_by: Optional[str] = Field(None, alias="managed_by") #did this cz this field is renamed managed_by in the db
+
+    # DB column is managed_by (no space). You renamed to "managed_by" in DB – good.
+    created_by: Optional[str] = Field(None, alias="managed_by")
+
     incident_at_date: Optional[date] = Field(None, alias="incident at date")
     time_of_collision: Optional[str] = Field(None, alias="time of collision")
     mode_of_traveling: Optional[str] = Field(None, alias="Mode of traveling during accident")
@@ -21,7 +24,6 @@ class AccidentRecordBase(BaseModel):
     alcohol_consumption: Optional[str] = Field(None, alias="Alcohol Consumption")
     time_between_alcohol: Optional[str] = Field(None, alias="Time between alcohol consumption and accident")
     illicit_drugs: Optional[str] = Field(None, alias="Illicit Drugs")
-    vehicle_type: Optional[str] = Field(None, alias="Vehicle type")
     helmet_worn: Optional[str] = Field(None, alias="Helmet Worn")
     engine_capacity: Optional[str] = Field(None, alias="Engine Capacity")
     mode_of_transport: Optional[str] = Field(None, alias="Mode of transport to hospital")
@@ -31,9 +33,13 @@ class AccidentRecordBase(BaseModel):
     income_after_accident: Optional[str] = Field(None, alias="Family monthly income after accident")
     family_status: Optional[str] = Field(None, alias="Family current status")
     vehicle_insured: Optional[str] = Field(None, alias="vehicle insured")
-    vehicle_insured_type: Optional[str] = Field(None, alias="vehicle insured type")
     passenger_type: Optional[str] = Field(None, alias="Passenger type")
-    first_aid_given: Optional[bool] = Field(None, alias="First aid given at seen")
+
+    # categorical; use str (Yes/No/Unknown)
+    first_aid_given: Optional[str] = Field(None, alias="First aid given at seen")
+
+    # Completed is controlled by the form checkbox
+    completed: Optional[bool] = Field(None, alias="Completed")
 
 class AccidentRecordCreate(AccidentRecordBase):
     pass
@@ -43,9 +49,6 @@ class AccidentRecordUpdate(AccidentRecordBase):
     created_by: Optional[str] = None
 
 class AccidentRecordOut(AccidentRecordBase):
-    model_config = ConfigDict(
-        from_attributes=True,
-        validate_by_name=True
-    )
-    
+    model_config = ConfigDict(from_attributes=True, validate_by_name=True)
     accident_id: str
+    # created_on, severity etc. can be present in raw DB data, but not required here.

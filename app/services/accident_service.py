@@ -3,39 +3,71 @@ from fastapi.encoders import jsonable_encoder
 from app.db import get_supabase
 from app.models.accident import AccidentRecordCreate, AccidentRecordUpdate
 
-def create_accident_record_service(accident: AccidentRecordCreate):
+TABLE = "Accident Record"  # exact table name with spaces
+
+def _strip_none(d: dict) -> dict:
+    return {k: v for k, v in d.items() if v is not None}
+
+def create_accident_record_service(accident: AccidentRecordCreate, user):
     supabase = get_supabase()
+
     payload = jsonable_encoder(accident, by_alias=True)
+    payload = _strip_none(payload)
 
-    # Remove keys with None so DB defaults apply
-    payload = {k: v for k, v in payload.items() if v is not None}
+    # Force manager = current user; ignore client value for security
+    user_id = getattr(user, "id", None) or getattr(user, "user_id", None)
+    if not user_id:
+        raise HTTPException(status_code=403, detail="Invalid user")
+    payload["managed_by"] = user_id
 
-    resp = supabase.table("Accident Record").insert(payload).execute()
+    # Let DB defaults set Severity='U', Completed=false, created_on
+    resp = supabase.table(TABLE).insert(payload).execute()
     if not resp.data:
         raise HTTPException(status_code=500, detail="Failed to create accident record.")
-    return jsonable_encoder(resp.data[0])
+    return resp.data[0]
 
-def edit_accident_record_service(accident_id: str, accident: AccidentRecordUpdate):
+def edit_accident_record_service(accident_id: str, accident: AccidentRecordUpdate, user):
     supabase = get_supabase()
-    payload = accident.dict(exclude_unset=True, by_alias=True)
-    resp = supabase.table("Accident Record").update(payload).eq("accident_id", accident_id).execute()
+
+    # Get existing row for permission checks
+    existing = supabase.table(TABLE).select("*").eq("accident_id", accident_id).single().execute()
+    rec = existing.data
+    if not rec:
+        raise HTTPException(status_code=404, detail="Accident record not found.")
+
+    user_id = getattr(user, "id", None) or getattr(user, "user_id", None)
+    if rec.get("Completed"):
+        raise HTTPException(status_code=403, detail="Completed records cannot be edited.")
+    if rec.get("managed_by") != user_id:
+        raise HTTPException(status_code=403, detail="You are not allowed to edit this record.")
+
+    # Build payload — do not allow changing ownership, patient, or severity here
+    payload = accident.model_dump(exclude_unset=True, by_alias=True)
+    for forbidden in ("patient_id", "managed_by", "severity"):
+        payload.pop(forbidden, None)
+
+    payload = _strip_none(payload)
+    if not payload:
+        return rec
+
+    resp = supabase.table(TABLE).update(payload).eq("accident_id", accident_id).execute()
     if not resp.data:
-        raise HTTPException(status_code=404, detail="Accident record not found or not updated.")
+        raise HTTPException(status_code=404, detail="Accident record not updated.")
     return resp.data[0]
 
 def get_all_accident_records_service():
     supabase = get_supabase()
-    resp = supabase.table("Accident Record").select("*").execute()
+    resp = supabase.table(TABLE).select("*").execute()
     return resp.data or []
 
 def get_accident_record_by_id_service(accident_id: str):
     supabase = get_supabase()
-    resp = supabase.table("Accident Record").select("*").eq("accident_id", accident_id).single().execute()
+    resp = supabase.table(TABLE).select("*").eq("accident_id", accident_id).single().execute()
     if not resp.data:
         raise HTTPException(status_code=404, detail="Accident record not found.")
     return resp.data
 
 def get_accident_records_by_patient_service(patient_id: str):
     supabase = get_supabase()
-    resp = supabase.table("Accident Record").select("*").eq("patient_id", patient_id).execute()
+    resp = supabase.table(TABLE).select("*").eq("patient_id", patient_id).order("created_on", desc=True).execute()
     return resp.data or []
