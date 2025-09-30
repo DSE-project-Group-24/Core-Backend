@@ -4,18 +4,17 @@ from datetime import date
 
 class PatientBase(BaseModel):
     full_name: str = Field(..., alias="Full Name")
-    contact_number: str = Field(..., alias="Contact Number")
-    date_of_birth: date = Field(..., alias="Date of Birth")
-    ethinicity: Optional[str] = Field(None, alias="Ehinicity")
-    gender: Optional[str] = Field(None, alias="Gender")
+    contact_number: Optional[str] = Field(None, alias="Contact Number")
+    date_of_birth: Optional[date] = Field(None, alias="Date of Birth")
+    ethinicity: Optional[str] = Field(None, alias="Ethnicity")
+    gender: str = Field(..., alias="Gender")
+    nic: Optional[str] = Field(None, alias="NIC")
     address_street: Optional[str] = Field(None, alias="Address Street")
     life_style: Optional[str] = Field(None, alias="Life Style")
     education_qualification: Optional[str] = Field(None, alias="Education Qualification")
     occupation: Optional[str] = Field(None, alias="Occupation")
     employment_type_name: Optional[str] = Field(None, alias="Employment Type Name")
-    family_monthly_income: Optional[int] = Field(None, alias="Family  Monthly Income")
-    access_to_wash_room: Optional[str] = Field(None, alias="Access to Wash Room")
-    type_of_toilet_modification: Optional[str] = Field(None, alias="Type of toilet modification")
+    family_monthly_income: Optional[str] = Field(None, alias="Family Monthly Income")
     blood_group: Optional[str] = Field(None, alias="Blood Group")
 
 class PatientCreate(PatientBase):
@@ -25,16 +24,14 @@ class PatientUpdate(BaseModel):
     full_name: Optional[str] = Field(None, alias="Full Name")
     contact_number: Optional[str] = Field(None, alias="Contact Number")
     date_of_birth: Optional[date] = Field(None, alias="Date of Birth")
-    ethinicity: Optional[str] = Field(None, alias="Ehinicity")
+    ethinicity: Optional[str] = Field(None, alias="Ethnicity")
     gender: Optional[str] = Field(None, alias="Gender")
     address_street: Optional[str] = Field(None, alias="Address Street")
     life_style: Optional[str] = Field(None, alias="Life Style")
     education_qualification: Optional[str] = Field(None, alias="Education Qualification")
     occupation: Optional[str] = Field(None, alias="Occupation")
     employment_type_name: Optional[str] = Field(None, alias="Employment Type Name")
-    family_monthly_income: Optional[int] = Field(None, alias="Family  Monthly Income")
-    access_to_wash_room: Optional[str] = Field(None, alias="Access to Wash Room")
-    type_of_toilet_modification: Optional[str] = Field(None, alias="Type of toilet modification")
+    family_monthly_income: Optional[str] = Field(None, alias="Family Monthly Income")
     blood_group: Optional[str] = Field(None, alias="Blood Group")
 
 class PatientOut(PatientBase):
