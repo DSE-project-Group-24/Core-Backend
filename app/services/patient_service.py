@@ -57,16 +57,34 @@ def create_patient_service(patient: PatientCreate, hospital_id: str):
 def edit_patient_service(patient_id: str, patient: PatientUpdate):
     supabase = get_supabase()
     payload = jsonable_encoder(patient, by_alias=True, exclude_unset=True)
-    print("patient_id:", patient_id)
-    print("payload:", payload)
-    # Perform update
+
     update_resp = supabase.table("Patient").update(payload).eq("patient_id", patient_id).execute()
     if not update_resp.data:
         raise HTTPException(status_code=404, detail="Patient not found or not updated.")
 
-    # Fetch full record
+    # Fetch full patient
     resp = supabase.table("Patient").select("*").eq("patient_id", patient_id).single().execute()
-    return resp.data
+    patient_row = resp.data
+    if not patient_row:
+        raise HTTPException(status_code=404, detail="Patient not found.")
+
+    # ✅ Fetch and attach Hospital ID for PatientOut response model
+    hp_resp = (
+        supabase.table("Hospital_Patient")
+        .select("hospital_id")
+        .eq("patient_id", patient_id)
+        .single()
+        .execute()
+    )
+
+    # If mapping exists, attach it; if not, you can decide to 404 or set None
+    if hp_resp.data and "hospital_id" in hp_resp.data:
+        patient_row["Hospital ID"] = hp_resp.data["hospital_id"]
+    else:
+        # If your PatientOut requires this, better to error explicitly:
+        raise HTTPException(status_code=500, detail="Hospital mapping not found for patient.")
+
+    return patient_row
 
 # def get_all_patients_service():
 #     supabase = get_supabase()

@@ -25,8 +25,8 @@ class PatientCreate(PatientBase):
     pass
 
 class PatientUpdate(BaseModel):
-    full_name: Optional[str] = Field(None, alias="Full Name")
-    gender: Optional[str] = Field(None, alias="Gender")
+    full_name: str = Field(..., alias="Full Name")
+    gender: str = Field(..., alias="Gender")
     contact_number: Optional[str] = Field(None, alias="Contact Number")
     date_of_birth: Optional[date] = Field(None, alias="Date of Birth")
     ethnicity: Optional[str] = Field(None, alias="Ethnicity")
