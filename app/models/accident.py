@@ -7,10 +7,7 @@ from datetime import date
 class AccidentRecordBase(BaseModel):
     model_config = ConfigDict(populate_by_name=True, validate_by_name=True)
     patient_id: str
-
-    # DB column is managed_by (no space). You renamed to "managed_by" in DB – good.
-    created_by: Optional[str] = Field(None, alias="managed_by")
-
+    managed_by: Optional[str] = Field(None, alias="managed by")
     incident_at_date: Optional[date] = Field(None, alias="incident at date")
     time_of_collision: Optional[str] = Field(None, alias="time of collision")
     mode_of_traveling: Optional[str] = Field(None, alias="Mode of traveling during accident")
@@ -36,19 +33,20 @@ class AccidentRecordBase(BaseModel):
     vehicle_insured: Optional[str] = Field(None, alias="vehicle insured")
     passenger_type: Optional[str] = Field(None, alias="Passenger type")
     discharge_outcome: Optional[str] = Field(None, alias="Discharge Outcome")
-
-    # categorical; use str (Yes/No/Unknown)
     first_aid_given: Optional[str] = Field(None, alias="First aid given at seen")
-
-    # Completed is controlled by the form checkbox
     completed: Optional[bool] = Field(None, alias="Completed")
+    severity: Optional[str] = Field(None, alias="Severity")
+    hospital_distance_from_home: Optional[str] = Field(None, alias="Hospital Distance From Home")
+    traveling_expenditure_per_day: Optional[str] = Field(None, alias="Traveling Expenditure Per Day")
+    any_other_hospital_admission_expenditure: Optional[str] = Field(None, alias="Any Other Hospital Admission Expenditure")
+
 
 class AccidentRecordCreate(AccidentRecordBase):
     pass
 
 class AccidentRecordUpdate(AccidentRecordBase):
     patient_id: Optional[str] = None
-    created_by: Optional[str] = None
+    managed_by: Optional[str] = None
 
 class AccidentRecordOut(AccidentRecordBase):
     model_config = ConfigDict(from_attributes=True, validate_by_name=True)

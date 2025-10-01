@@ -44,16 +44,103 @@ def get_comprehensive_analytics_service(filters: AccidentAnalyticsFilters) -> Ac
         data_period=_get_data_period(accident_data)
     )
 
-def get_accident_summary_service() -> Dict[str, Any]:
-    """Get accident summary statistics - follows existing service pattern"""
+# def get_accident_summary_service(hospital_id: str) -> Dict[str, Any]:
+#     """Get accident summary statistics limited to a specific hospital"""
+#     supabase = get_supabase()
+    
+#     # Only fetch accidents for this hospital
+#     response = (
+#         supabase.table("Accident Record")
+#         .select("*")
+#         .eq("hospital_id", hospital_id)
+#         .execute()
+#     )
+
+#     accident_data = response.data or []
+    
+#     summary_stats = _get_summary_statistics(accident_data)
+    
+#     return {
+#         "total_accidents": summary_stats['total_records'],
+#         "peak_accident_hour": summary_stats['peak_hour'],
+#         "most_common_collision": summary_stats['common_collision'],
+#         "avg_income_impact": summary_stats['avg_income_change'],
+#         "generated_at": datetime.now().isoformat()
+#     }
+
+def get_accident_summary_service(hospital_id: str) -> Dict[str, Any]:
     supabase = get_supabase()
+
+    # Step 1: get ALL patient_ids for this hospital (with pagination to avoid 1000 limit)
+    all_patient_ids = []
+    offset = 0
+    page_size = 1000
     
-    # Get all accident data (no filters)
-    response = supabase.table("Accident Record").select("*").execute()
-    accident_data = response.data or []
+    print(f"🏥 Getting all patients for hospital: {hospital_id}")
     
-    summary_stats = _get_summary_statistics(accident_data)
+    while True:
+        hospital_patients_resp = (
+            supabase.table("Hospital_Patient")
+            .select("patient_id")
+            .eq("hospital_id", hospital_id)
+            .range(offset, offset + page_size - 1)
+            .execute()
+        )
+        
+        if not hospital_patients_resp.data or len(hospital_patients_resp.data) == 0:
+            break
+            
+        batch_patient_ids = [p["patient_id"] for p in hospital_patients_resp.data]
+        all_patient_ids.extend(batch_patient_ids)
+        print(f"📋 Patient batch {offset//page_size + 1}: Retrieved {len(batch_patient_ids)} patient IDs")
+        
+        # If we got less than page_size records, we've reached the end
+        if len(hospital_patients_resp.data) < page_size:
+            break
+            
+        offset += page_size
     
+    patient_ids = all_patient_ids
+    print(f"🎯 Total patients found for hospital: {len(patient_ids)}")
+
+    if not patient_ids:
+        return {
+            "total_accidents": 0,
+            "peak_accident_hour": None,
+            "most_common_collision": None,
+            "avg_income_impact": None,
+            "generated_at": datetime.now().isoformat()
+        }
+
+    # Step 2: get accident records in BATCHES to avoid 414 error
+    all_accident_data = []
+    batch_size = 100  # Process 100 patient IDs at a time
+    
+    for i in range(0, len(patient_ids), batch_size):
+        batch_patient_ids = patient_ids[i:i + batch_size]
+        
+        try:
+            response = (
+                supabase.table("Accident Record")
+                .select("*")
+                .in_("patient_id", batch_patient_ids)
+                .execute()
+            )
+            
+            if response.data:
+                all_accident_data.extend(response.data)
+                print(f"Batch {i//batch_size + 1}: Retrieved {len(response.data)} records")
+                
+        except Exception as e:
+            # Log the error but continue with other batches
+            print(f"Error fetching batch {i//batch_size + 1}: {str(e)}")
+            continue
+    
+    print(f"Total accident records retrieved: {len(all_accident_data)}")
+    
+    # Step 3: compute statistics
+    summary_stats = _get_summary_statistics(all_accident_data)
+
     return {
         "total_accidents": summary_stats['total_records'],
         "peak_accident_hour": summary_stats['peak_hour'],
@@ -62,20 +149,99 @@ def get_accident_summary_service() -> Dict[str, Any]:
         "generated_at": datetime.now().isoformat()
     }
 
-def get_filter_options_service() -> Dict[str, Any]:
-    """Get available filter options - follows existing service pattern"""
+
+def get_filter_options_service(hospital_id: str) -> Dict[str, Any]:
+    """Get available filter options for a specific hospital - follows existing service pattern"""
     supabase = get_supabase()
     
-    # Get all accident data with patient info to extract unique values
-    response = supabase.table("Accident Record").select("""
-        *,
-        Patient:patient_id (
-            Date of Birth,
-            Ethnicity,
-            Gender
+    # Step 1: Get all patient_ids for this hospital (with pagination)
+    all_patient_ids = []
+    offset = 0
+    page_size = 1000
+    
+    print(f"🏥 Getting filter options for hospital: {hospital_id}")
+    
+    while True:
+        hospital_patients_resp = (
+            supabase.table("Hospital_Patient")
+            .select("patient_id")
+            .eq("hospital_id", hospital_id)
+            .range(offset, offset + page_size - 1)
+            .execute()
         )
-    """).execute()
-    accident_data = response.data or []
+        
+        if not hospital_patients_resp.data or len(hospital_patients_resp.data) == 0:
+            break
+            
+        batch_patient_ids = [p["patient_id"] for p in hospital_patients_resp.data]
+        all_patient_ids.extend(batch_patient_ids)
+        
+        if len(hospital_patients_resp.data) < page_size:
+            break
+            
+        offset += page_size
+    
+    patient_ids = all_patient_ids
+    print(f"🎯 Filter options: Found {len(patient_ids)} patients for hospital")
+
+    if not patient_ids:
+        return {
+            "genders": [],
+            "ethnicities": [],
+            "collision_types": [],
+            "road_categories": [],
+            "discharge_outcomes": [],
+            "age_range": {"min": 0, "max": 100},
+            "date_range": {"min": None, "max": None}
+        }
+
+    # Step 2: Get accident data in batches
+    all_accident_data = []
+    batch_size = 100
+    
+    for i in range(0, len(patient_ids), batch_size):
+        batch_patient_ids = patient_ids[i:i + batch_size]
+        
+        try:
+            response = (
+                supabase.table("Accident Record")
+                .select("*")
+                .in_("patient_id", batch_patient_ids)
+                .execute()
+            )
+            
+            if response.data:
+                all_accident_data.extend(response.data)
+                
+        except Exception as e:
+            print(f"Error fetching filter options batch {i//batch_size + 1}: {str(e)}")
+            continue
+
+    # Step 3: Get patient data for demographics
+    patient_data_map = {}
+    if all_accident_data:
+        accident_patient_ids = list(set([acc["patient_id"] for acc in all_accident_data if acc.get("patient_id")]))
+        
+        for i in range(0, len(accident_patient_ids), 100):
+            batch_patient_ids = accident_patient_ids[i:i + 100]
+            
+            try:
+                patient_response = (
+                    supabase.table("Patient")
+                    .select('"Date of Birth","Ethnicity","Gender",patient_id')
+                    .in_("patient_id", batch_patient_ids)
+                    .execute()
+                )
+                
+                if patient_response.data:
+                    for patient in patient_response.data:
+                        patient_data_map[patient["patient_id"]] = patient
+                        
+            except Exception as e:
+                print(f"Error fetching patient data for filters: {str(e)}")
+                continue
+
+    accident_data = all_accident_data
     
     # Extract unique values for each filter field
     genders = set()
@@ -87,7 +253,9 @@ def get_filter_options_service() -> Dict[str, Any]:
     dates = []
     
     for record in accident_data:
-        patient_data = record.get('Patient')
+        patient_id = record.get('patient_id')
+        patient_data = patient_data_map.get(patient_id) if patient_id else None
+        
         if patient_data:
             # Gender
             gender = patient_data.get('Gender')
@@ -158,40 +326,118 @@ def get_filter_options_service() -> Dict[str, Any]:
 from typing import List, Dict, Any
 
 def _get_filtered_accident_data(supabase, filters: AccidentAnalyticsFilters) -> List[Dict[str, Any]]:
-    """Get accident data from Supabase with filters applied (joins Patient via patient_id)."""
+    """Get accident data from Supabase with hospital filtering and batch processing to avoid 414 errors."""
     try:
-        # embed Patient by the foreign-key column 'patient_id'
-        # NOTE: column names that contain spaces must be wrapped in double quotes
-        select_str = (
-            '*, "Patient":patient_id('
-            '"Full Name","Date of Birth","Ethnicity","Gender",'
-            '"Education Qualification","Occupation","Family Monthly Income"'
-            ')'
-        )
+        # Step 1: Get ALL patient_ids for this hospital (with pagination)
+        if not filters or not filters.hospital_id:
+            raise ValueError("hospital_id is required for analytics")
+            
+        all_patient_ids = []
+        offset = 0
+        page_size = 1000
+        
+        print(f"🏥 Getting all patients for hospital: {filters.hospital_id}")
+        
+        while True:
+            hospital_patients_resp = (
+                supabase.table("Hospital_Patient")
+                .select("patient_id")
+                .eq("hospital_id", filters.hospital_id)
+                .range(offset, offset + page_size - 1)
+                .execute()
+            )
+            
+            if not hospital_patients_resp.data or len(hospital_patients_resp.data) == 0:
+                break
+                
+            batch_patient_ids = [p["patient_id"] for p in hospital_patients_resp.data]
+            all_patient_ids.extend(batch_patient_ids)
+            print(f"📋 Analytics patient batch {offset//page_size + 1}: Retrieved {len(batch_patient_ids)} patient IDs")
+            
+            if len(hospital_patients_resp.data) < page_size:
+                break
+                
+            offset += page_size
+        
+        patient_ids = all_patient_ids
+        print(f"🎯 Analytics: Total patients found for hospital: {len(patient_ids)}")
 
-        query = supabase.table("Accident Record").select(select_str)
+        if not patient_ids:
+            return []
 
-        # Apply filters if provided
-        if filters:
-            if filters.start_date:
-                query = query.gte("incident at date", filters.start_date.isoformat())
-            if filters.end_date:
-                query = query.lte("incident at date", filters.end_date.isoformat())
-            if filters.collision_type:
-                query = query.eq("Collision with", filters.collision_type)
-            if filters.road_category:
-                query = query.eq("Category of Road", filters.road_category)
-            if filters.discharge_outcome:
-                query = query.eq("Discharge Outcome", filters.discharge_outcome)
+        # Step 2: Get accident records in batches to avoid 414 error
+        all_accident_data = []
+        batch_size = 100  # Process 100 patient IDs at a time
+        
+        for i in range(0, len(patient_ids), batch_size):
+            batch_patient_ids = patient_ids[i:i + batch_size]
+            
+            try:
+                # Simple query without complex joins to avoid URL length issues
+                query = (
+                    supabase.table("Accident Record")
+                    .select("*")
+                    .in_("patient_id", batch_patient_ids)
+                )
 
-        # Execute query
-        response = query.execute()
+                # Apply filters if provided
+                if filters.start_date:
+                    query = query.gte("incident at date", filters.start_date.isoformat())
+                if filters.end_date:
+                    query = query.lte("incident at date", filters.end_date.isoformat())
+                if filters.collision_type:
+                    query = query.eq("Collision with", filters.collision_type)
+                if filters.road_category:
+                    query = query.eq("Category of Road", filters.road_category)
+                if filters.discharge_outcome:
+                    query = query.eq("Discharge Outcome", filters.discharge_outcome)
 
-        # helpful debugging if something goes wrong
-        if getattr(response, "error", None):
-            raise Exception(f"Supabase error: {response.error}")
+                response = query.execute()
+                
+                if response.data:
+                    all_accident_data.extend(response.data)
+                    print(f"Analytics batch {i//batch_size + 1}: Retrieved {len(response.data)} accident records")
+                    
+            except Exception as e:
+                print(f"Error fetching analytics batch {i//batch_size + 1}: {str(e)}")
+                continue
 
-        return response.data or []
+        print(f"📊 Analytics: Total accident records retrieved: {len(all_accident_data)}")
+
+        # Step 3: Get patient data for the accidents we found
+        if all_accident_data:
+            # Get unique patient IDs from the accident data
+            accident_patient_ids = list(set([acc["patient_id"] for acc in all_accident_data if acc.get("patient_id")]))
+            
+            # Get patient data in batches
+            patient_data_map = {}
+            for i in range(0, len(accident_patient_ids), 100):
+                batch_patient_ids = accident_patient_ids[i:i + 100]
+                
+                try:
+                    patient_response = (
+                        supabase.table("Patient")
+                        .select('"Full Name","Date of Birth","Ethnicity","Gender",'
+                               '"Education Qualification","Occupation","Family Monthly Income",patient_id')
+                        .in_("patient_id", batch_patient_ids)
+                        .execute()
+                    )
+                    
+                    if patient_response.data:
+                        for patient in patient_response.data:
+                            patient_data_map[patient["patient_id"]] = patient
+                            
+                except Exception as e:
+                    print(f"Error fetching patient batch {i//100 + 1}: {str(e)}")
+                    continue
+            
+            # Combine accident data with patient data
+            for accident in all_accident_data:
+                patient_id = accident.get("patient_id")
+                if patient_id and patient_id in patient_data_map:
+                    accident["Patient"] = patient_data_map[patient_id]
+
+        return all_accident_data
 
     except Exception as e:
         raise Exception(f"Error fetching accident data: {str(e)}")

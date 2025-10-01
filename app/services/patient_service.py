@@ -75,13 +75,14 @@ def edit_patient_service(patient_id: str, patient: PatientUpdate):
 #     resp = supabase.table("Patient").select("*").execute()
 #     return resp.data or []
 
+
 def get_hospital_patients_service(hospital_id: str):
     supabase = get_supabase()
 
-    # Query Hospital_Patient table to get patient IDs associated with the hospital
+    # Join Hospital_Patient with Patient table directly
     resp = (
         supabase.table("Hospital_Patient")
-        .select("patient_id")
+        .select("patient_id, Patient(*)")   # join Patient table
         .eq("hospital_id", hospital_id)
         .execute()
     )
@@ -89,22 +90,13 @@ def get_hospital_patients_service(hospital_id: str):
     if not resp.data:
         return []
 
-    # Extract patient IDs
-    patient_ids = [item["patient_id"] for item in resp.data]
-
-    # Get patient details for these IDs
-    patients_resp = (
-        supabase.table("Patient")
-        .select("*")
-        .in_("patient_id", patient_ids)
-        .execute()
-    )
-
-    patients = patients_resp.data or []
-
-    # 🔥 Add hospital_id to every patient dict
-    for p in patients:
-        p["Hospital ID"] = hospital_id
+    patients = []
+    for item in resp.data:
+        patient_data = item.get("Patient")
+        if patient_data:
+            # Add hospital_id to match your PatientOut schema
+            patient_data["Hospital ID"] = hospital_id
+            patients.append(patient_data)
 
     return patients
 
