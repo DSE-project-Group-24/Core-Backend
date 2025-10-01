@@ -8,7 +8,6 @@ class AccidentRecordBase(BaseModel):
     patient_id: str
     managed_by: Optional[str] = Field(None, alias="managed by")
     incident_at_date: Optional[date] = Field(None, alias="incident at date")
-    incident_at_time: Optional[time] = Field(None, alias="incident at time")
     time_of_collision: Optional[str] = Field(None, alias="time of collision")
     mode_of_traveling: Optional[str] = Field(None, alias="Mode of traveling during accident")
     visibility: Optional[str] = Field(None, alias="Visibility")
@@ -31,8 +30,6 @@ class AccidentRecordBase(BaseModel):
     income_before_accident: Optional[str] = Field(None, alias="Family monthly income before accident")
     income_after_accident: Optional[str] = Field(None, alias="Family monthly income after accident")
     family_status: Optional[str] = Field(None, alias="Family current status")
-    insurance_claim_type: Optional[str] = Field(None, alias="Any insurance claim type")
-    dress_name: Optional[str] = Field(None, alias="Dress name")
     vehicle_insured: Optional[str] = Field(None, alias="vehicle insured")
     vehicle_insured_type: Optional[str] = Field(None, alias="vehicle insured type")
     passenger_type: Optional[str] = Field(None, alias="Passenger type")
