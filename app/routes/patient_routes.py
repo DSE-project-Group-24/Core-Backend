@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, Path, Query
-from app.models.patient import PatientCreate, PatientUpdate, PatientOut
+from app.models.patient import PatientCreate, PatientUpdate, PatientOut, PatientOutPatch
 from app.services.patient_service import (
     create_patient_service,
     edit_patient_service,
@@ -18,7 +18,7 @@ async def create_patient(
 ):
     return create_patient_service(patient, hospital_id)
 
-@router.patch("/{patient_id}", response_model=PatientOut, dependencies=[Depends(get_current_user)])
+@router.patch("/{patient_id}", response_model=PatientOutPatch, dependencies=[Depends(get_current_user)])
 def edit_patient(patient_id: str, patient: PatientUpdate):
     return edit_patient_service(patient_id, patient)
 

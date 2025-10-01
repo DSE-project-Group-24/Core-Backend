@@ -43,3 +43,7 @@ class PatientOut(PatientBase):
     model_config = ConfigDict(from_attributes=True, validate_by_name=True)
     patient_id: str
     hospital_id: str = Field(..., alias="Hospital ID")
+
+class PatientOutPatch(PatientBase):
+    model_config = ConfigDict(from_attributes=True, validate_by_name=True)
+    patient_id: str
