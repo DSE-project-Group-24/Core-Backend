@@ -15,7 +15,8 @@ from app.routes.prediction_transferprobability import router as prediction_trans
 #from app.routes.hospital_stay_predictions_routes import router as hospital_stay_predictions_router
 from app.routes.accident_analytics_routes import router as analytics_router  
 
-
+# from app.routes.govDash_routes import router as gov_dash_routes
+from app.routes.govDash_routes import router as govDash_routes 
 
 app = FastAPI(title="FastAPI + Supabase", redirect_slashes=False)
 
@@ -50,6 +51,7 @@ app.include_router(prediction_transferprobability_router, prefix="/predictions",
 
 # Include analytics routes
 app.include_router(analytics_router, prefix="/analytics", tags=["Accident Analytics"])
+app.include_router(govDash_routes, prefix="/govDash", tags=["Government Dashboard"])
 
 # app.add_middleware(
 #     CORSMiddleware,
