@@ -35,6 +35,9 @@ class AccidentRecordBase(BaseModel):
     passenger_type: Optional[str] = Field(None, alias="Passenger type")
     first_aid_given: Optional[bool] = Field(None, alias="First aid given at seen")
     completed: Optional[bool] = Field(None, alias="Completed")
+    severity: Optional[str] = Field(None, alias="Severity")
+    hospital_distance_from_home: Optional[str] = Field(None, alias="Hospital Distance From Home")
+
 
 class AccidentRecordCreate(AccidentRecordBase):
     pass
