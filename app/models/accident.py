@@ -37,6 +37,8 @@ class AccidentRecordBase(BaseModel):
     completed: Optional[bool] = Field(None, alias="Completed")
     severity: Optional[str] = Field(None, alias="Severity")
     hospital_distance_from_home: Optional[str] = Field(None, alias="Hospital Distance From Home")
+    traveling_expenditure_per_day: Optional[str] = Field(None, alias="Traveling Expenditure Per Day")
+    any_other_hospital_admission_expenditure: Optional[str] = Field(None, alias="Any Other Hospital Admission Expenditure")
 
 
 class AccidentRecordCreate(AccidentRecordBase):

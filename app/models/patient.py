@@ -48,4 +48,4 @@ class PatientOut(PatientBase):
     )
     
     patient_id: str
-    hospital_id: str = Field(..., alias="Hospital ID")
+    hospital_id: str = Field(..., alias="Hospital ID")
