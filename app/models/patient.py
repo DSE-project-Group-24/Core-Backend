@@ -32,7 +32,7 @@ class PatientUpdate(BaseModel):
     ethnicity: Optional[str] = Field(None, alias="Ethnicity")
     gender: Optional[str] = Field(None, alias="Gender")
     address_street: Optional[str] = Field(None, alias="Address Street")
-    life_style: Optional[str] = Field(None, alias=03ce79df-515a-4a0e-bfcc-11dde0d68979"Life Style")
+    life_style: Optional[str] = Field(None, alias="Life Style")
     education_qualification: Optional[str] = Field(None, alias="Education Qualification")
     occupation: Optional[str] = Field(None, alias="Occupation")
     # employment_type_name: Optional[str] = Field(None, alias="Employment Type Name")
