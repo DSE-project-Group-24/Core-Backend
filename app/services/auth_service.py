@@ -37,13 +37,15 @@ def login_user_service(credentials: UserLogin):
         raise HTTPException(status_code=401, detail="Invalid email or password")
 
     # Create tokens
-    token_data = {"sub": str(user["user_id"]), "email": user["email"], "role": user["role"]}
+    token_data = {"sub": str(user["user_id"]), "email": user["email"], "role": user["role"], "name": user["name"]   }
     access_token = create_access_token(token_data)
     refresh_token = create_refresh_token(token_data)
 
     return {
         "access_token": access_token,
         "refresh_token": refresh_token,
+        "user_id": user["user_id"],
+        "name": user["name"],
         "role": user["role"]
     }
 

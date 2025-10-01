@@ -24,7 +24,9 @@ class PatientCreate(PatientBase):
     pass
 
 class PatientUpdate(BaseModel):
-    full_name: Optional[str] = Field(None, alias="Full Name")
+
+    full_name: str = Field(..., alias="Full Name")
+    gender: str = Field(..., alias="Gender")
     contact_number: Optional[str] = Field(None, alias="Contact Number")
     date_of_birth: Optional[date] = Field(None, alias="Date of Birth")
     ethnicity: Optional[str] = Field(None, alias="Ethnicity")
@@ -49,3 +51,7 @@ class PatientOut(PatientBase):
     
     patient_id: str
     hospital_id: str = Field(..., alias="Hospital ID")
+
+class PatientOutPatch(PatientBase):
+    model_config = ConfigDict(from_attributes=True, validate_by_name=True)
+    patient_id: str

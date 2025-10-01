@@ -1,10 +1,11 @@
 from pydantic import BaseModel, Field, ConfigDict
 from typing import Optional
-from datetime import date, time
-from decimal import Decimal
+from datetime import date
 
-# Accident Record Model
+# Pydantic v2 models
+
 class AccidentRecordBase(BaseModel):
+    model_config = ConfigDict(populate_by_name=True, validate_by_name=True)
     patient_id: str
     managed_by: Optional[str] = Field(None, alias="managed by")
     incident_at_date: Optional[date] = Field(None, alias="incident at date")
@@ -21,7 +22,6 @@ class AccidentRecordBase(BaseModel):
     alcohol_consumption: Optional[str] = Field(None, alias="Alcohol Consumption")
     time_between_alcohol: Optional[str] = Field(None, alias="Time between alcohol consumption and accident")
     illicit_drugs: Optional[str] = Field(None, alias="Illicit Drugs")
-    vehicle_type: Optional[str] = Field(None, alias="Vehicle type")
     helmet_worn: Optional[str] = Field(None, alias="Helmet Worn")
     engine_capacity: Optional[str] = Field(None, alias="Engine Capacity")
     mode_of_transport: Optional[str] = Field(None, alias="Mode of transport to hospital")
@@ -31,9 +31,9 @@ class AccidentRecordBase(BaseModel):
     income_after_accident: Optional[str] = Field(None, alias="Family monthly income after accident")
     family_status: Optional[str] = Field(None, alias="Family current status")
     vehicle_insured: Optional[str] = Field(None, alias="vehicle insured")
-    vehicle_insured_type: Optional[str] = Field(None, alias="vehicle insured type")
     passenger_type: Optional[str] = Field(None, alias="Passenger type")
-    first_aid_given: Optional[bool] = Field(None, alias="First aid given at seen")
+    discharge_outcome: Optional[str] = Field(None, alias="Discharge Outcome")
+    first_aid_given: Optional[str] = Field(None, alias="First aid given at seen")
     completed: Optional[bool] = Field(None, alias="Completed")
     severity: Optional[str] = Field(None, alias="Severity")
     hospital_distance_from_home: Optional[str] = Field(None, alias="Hospital Distance From Home")
@@ -49,9 +49,9 @@ class AccidentRecordUpdate(AccidentRecordBase):
     managed_by: Optional[str] = None
 
 class AccidentRecordOut(AccidentRecordBase):
-    model_config = ConfigDict(
-        from_attributes=True,
-        validate_by_name=True
-    )
-    
+    model_config = ConfigDict(from_attributes=True, validate_by_name=True)
     accident_id: str
+    created_on: date
+    managed_by_name: Optional[str] = Field(None, alias="managed_by_name")
+    # Note: createf on and managed by name were added by SHakthi for the record viewing readability.
+    # created_on, severity etc. can be present in raw DB data, but not required here.
