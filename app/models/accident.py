@@ -53,4 +53,7 @@ class AccidentRecordUpdate(AccidentRecordBase):
 class AccidentRecordOut(AccidentRecordBase):
     model_config = ConfigDict(from_attributes=True, validate_by_name=True)
     accident_id: str
+    created_on: date
+    managed_by_name: Optional[str] = Field(None, alias="managed_by_name")
+    # Note: createf on and managed by name were added by SHakthi for the record viewing readability.
     # created_on, severity etc. can be present in raw DB data, but not required here.

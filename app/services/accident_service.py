@@ -94,7 +94,110 @@ def get_accident_record_by_id_service(accident_id: str):
         raise HTTPException(status_code=404, detail="Accident record not found.")
     return resp.data
 
-def get_accident_records_by_patient_service(patient_id: str):
+def _get_value(obj, *keys, default=None):
+    """Small helper to safely get a value from dict or object by several keys/attrs."""
+    if isinstance(obj, dict):
+        for k in keys:
+            if k in obj and obj[k] is not None:
+                return obj[k]
+    else:
+        for k in keys:
+            v = getattr(obj, k, None)
+            if v is not None:
+                return v
+    return default
+
+def get_accident_records_by_patient_service(patient_id: str, user):
     supabase = get_supabase()
-    resp = supabase.table(TABLE).select("*").eq("patient_id", patient_id).order("created_on", desc=True).execute()
-    return resp.data or []
+
+    # 1) Identify current user and role
+    current_user_id = user.get("sub")
+    if not current_user_id:
+        # If your auth guarantees this, you can raise 403 instead.
+        current_user_id = None
+
+    current_user_row = None
+    current_role = None
+    current_nurse_hospital_id = None
+
+    if current_user_id:
+        user_resp = supabase.table("User") \
+            .select("user_id, role") \
+            .eq("user_id", current_user_id) \
+            .single() \
+            .execute()
+        current_user_row = user_resp.data
+        current_role = (current_user_row or {}).get("role")
+
+        # If current user is a nurse, fetch their hospital_id from Nurse table
+        if current_role == "nurse":
+            nurse_resp = supabase.table("Nurse") \
+                .select("user_id, hospital_id") \
+                .eq("user_id", current_user_id) \
+                .single() \
+                .execute()
+            if nurse_resp.data:
+                current_nurse_hospital_id = nurse_resp.data.get("hospital_id")
+
+    # 2) Get records for patient
+    resp = supabase.table(TABLE) \
+        .select("*") \
+        .eq("patient_id", patient_id) \
+        .order("created_on", desc=True) \
+        .execute()
+    records = resp.data or []
+    if not records:
+        return []
+
+    # 3) Collect all distinct manager user_ids
+    managed_ids = list({rec.get("managed_by") for rec in records if rec.get("managed_by")})
+    if not managed_ids:
+        # Nothing to enrich
+        return records
+
+    # 4) Fetch managers' user records (user_id -> name)
+    users_resp = supabase.table("User") \
+        .select("user_id, name") \
+        .in_("user_id", managed_ids) \
+        .execute()
+    users = {u["user_id"]: u.get("name") for u in (users_resp.data or [])}
+
+    # 5) Fetch managers' nurse records (user_id -> hospital_id)
+    nurses_resp = supabase.table("Nurse") \
+        .select("user_id, hospital_id") \
+        .in_("user_id", managed_ids) \
+        .execute()
+    manager_user_to_hospital = {n["user_id"]: n.get("hospital_id") for n in (nurses_resp.data or [])}
+
+    # 6) Fetch hospitals for all manager hospital_ids (hospital_id -> name)
+    manager_hospital_ids = list({hid for hid in manager_user_to_hospital.values() if hid})
+    hospitals = {}
+    if manager_hospital_ids:
+        hospitals_resp = supabase.table("Hospital") \
+            .select("hospital_id, name") \
+            .in_("hospital_id", manager_hospital_ids) \
+            .execute()
+        hospitals = {h["hospital_id"]: h.get("name") for h in (hospitals_resp.data or [])}
+
+    # 7) Attach managed_by_name based on rule:
+    #    If current user is nurse AND manager's hospital_id != current nurse's hospital_id:
+    #        managed_by_name = that manager's Hospital.name
+    #    Else:
+    #        managed_by_name = manager's User.name
+    for rec in records:
+        manager_id = rec.get("managed_by")
+        manager_name = users.get(manager_id)
+        manager_hospital_id = manager_user_to_hospital.get(manager_id)
+
+        if current_role == "nurse" and current_nurse_hospital_id and manager_hospital_id:
+            if str(manager_hospital_id) != str(current_nurse_hospital_id):
+                # cross-hospital → show hospital name
+                rec["managed_by_name"] = hospitals.get(manager_hospital_id) or manager_name
+            else:
+                # same hospital → show user (manager) name
+                rec["managed_by_name"] = manager_name
+        else:
+            # if not a nurse (or unknown hospital), keep original behavior
+            rec["managed_by_name"] = manager_name
+
+    return records

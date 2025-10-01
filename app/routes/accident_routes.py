@@ -29,4 +29,4 @@ def get_accident_record_by_id(accident_id: str = Path(..., description="Accident
 
 @router.get("/patient/{patient_id}", response_model=list[AccidentRecordOut])
 def get_accident_records_by_patient(patient_id: str = Path(..., description="Patient UUID"), user=Depends(get_current_user)):
-    return get_accident_records_by_patient_service(patient_id)
+    return get_accident_records_by_patient_service(patient_id, user)
