@@ -51,14 +51,14 @@ app.include_router(prediction_transferprobability_router, prefix="/predictions",
 # Include analytics routes
 app.include_router(analytics_router, prefix="/analytics", tags=["Accident Analytics"])
 
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=origins,
-    # allow_origins=['*'],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+# app.add_middleware(
+#     CORSMiddleware,
+#     allow_origins=origins,
+#     # allow_origins=['*'],
+#     allow_credentials=True,
+#     allow_methods=["*"],
+#     allow_headers=["*"],
+# )
 
 
 

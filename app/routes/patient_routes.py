@@ -22,7 +22,7 @@ async def create_patient(
 def edit_patient(patient_id: str, patient: PatientUpdate):
     return edit_patient_service(patient_id, patient)
 
-@router.get("/", response_model=list[PatientOut])
+@router.get("", response_model=list[PatientOut])
 async def get_hospital_patients(hospital_id: str = Depends(get_user_hospital_id)):
     """Get patients associated with the current user's hospital"""
     return get_hospital_patients_service(hospital_id)
