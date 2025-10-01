@@ -11,7 +11,7 @@ from app.auth.dependencies import get_current_user
 
 router = APIRouter()
 
-@router.get("/", response_model=AccidentAnalyticsResponse, dependencies=[Depends(get_current_user)])
+@router.get("", response_model=AccidentAnalyticsResponse, dependencies=[Depends(get_current_user)])
 def get_accident_analytics(
     start_date: Optional[date] = Query(None, description="Filter accidents from this date"),
     end_date: Optional[date] = Query(None, description="Filter accidents to this date"),

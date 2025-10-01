@@ -13,7 +13,7 @@ class PatientBase(BaseModel):
     education_qualification: Optional[str] = Field(None, alias="Education Qualification")
     occupation: Optional[str] = Field(None, alias="Occupation")
     employment_type_name: Optional[str] = Field(None, alias="Employment Type Name")
-    family_monthly_income: Optional[int] = Field(None, alias="Family  Monthly Income")
+    family_monthly_income: Optional[str] = Field(None, alias="Family Monthly Income")
     nic: Optional[str] = Field(None, alias="NIC")
     registered_date: Optional[date] = Field(None, alias="Registered Date")
     access_to_wash_room: Optional[str] = Field(None, alias="Access to Wash Room")
