@@ -46,24 +46,34 @@ def create_accident_record_service(accident: AccidentRecordCreate, user):
 def edit_accident_record_service(accident_id: str, accident: AccidentRecordUpdate, user):
     supabase = get_supabase()
 
-    # Get existing row for permission checks
+    # Fetch record and check permissions
     existing = supabase.table(TABLE).select("*").eq("accident_id", accident_id).single().execute()
     rec = existing.data
     if not rec:
         raise HTTPException(status_code=404, detail="Accident record not found.")
 
-    user_id = getattr(user, "id", None) or getattr(user, "user_id", None)
+    user_id = (user.get("sub") or user.get("user_id") or user.get("id"))
+    if not user_id:
+        raise HTTPException(status_code=403, detail="Invalid user")
+
     if rec.get("Completed"):
         raise HTTPException(status_code=403, detail="Completed records cannot be edited.")
-    if rec.get("managed_by") != user_id:
+    if str(rec.get("managed_by")) != str(user_id):
         raise HTTPException(status_code=403, detail="You are not allowed to edit this record.")
 
-    # Build payload — do not allow changing ownership, patient, or severity here
-    payload = accident.model_dump(exclude_unset=True, by_alias=True)
-    for forbidden in ("patient_id", "managed_by", "severity"):
+    # Build payload with JSON-safe values and DB aliases (spaces)
+    # Either use model_dump(..., mode="json") OR jsonable_encoder(...)
+    payload = accident.model_dump(mode="json", by_alias=True, exclude_unset=True)
+    # If you prefer the encoder:
+    # payload = jsonable_encoder(accident, by_alias=True, exclude_unset=True)
+
+    # Prevent changing ownership/patient
+    for forbidden in ("patient_id", "managed_by"):
         payload.pop(forbidden, None)
 
-    payload = _strip_none(payload)
+    # Normalize empty strings -> unknown
+    payload = _empty_strings_to_unknown(payload)
+
     if not payload:
         return rec
 
