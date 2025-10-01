@@ -8,6 +8,7 @@ from app.services.accident_analytics_service import (
     get_filter_options_service
 )
 from app.auth.dependencies import get_current_user
+from app.auth.hospital_dependency import get_user_hospital_id
 
 router = APIRouter()
 
@@ -22,9 +23,9 @@ def get_accident_analytics(
     collision_type: Optional[str] = Query(None, description="Filter by collision type"),
     road_category: Optional[str] = Query(None, description="Filter by road category"),
     discharge_outcome: Optional[str] = Query(None, description="Filter by discharge outcome"),
-    hospital_id: Optional[int] = Query(None, description="Filter by hospital ID")
+    hospital_id: str = Depends(get_user_hospital_id)  # Get hospital_id from user context
 ):
-    # Create filters object
+    # Create filters object with hospital_id from user context
     filters = AccidentAnalyticsFilters(
         start_date=start_date,
         end_date=end_date,
@@ -35,18 +36,18 @@ def get_accident_analytics(
         collision_type=collision_type,
         road_category=road_category,
         discharge_outcome=discharge_outcome,
-        hospital_id=hospital_id
+        hospital_id=hospital_id  # Use hospital_id from dependency injection
     )
     
     return get_comprehensive_analytics_service(filters)
 
-@router.get("/summary", dependencies=[Depends(get_current_user)])
-def get_accident_summary():
-    return get_accident_summary_service()
+@router.get("/summary", dependencies=[Depends(get_current_user), Depends(get_user_hospital_id)])
+def get_accident_summary(hospital_id: str = Depends(get_user_hospital_id)):
+    return get_accident_summary_service(hospital_id)
 
-@router.get("/filters/options", dependencies=[Depends(get_current_user)])
-def get_filter_options():
-    return get_filter_options_service()
+@router.get("/filters/options", dependencies=[Depends(get_current_user), Depends(get_user_hospital_id)])
+def get_filter_options(hospital_id: str = Depends(get_user_hospital_id)):
+    return get_filter_options_service(hospital_id)
 
 @router.get("/health")
 def analytics_health_check():

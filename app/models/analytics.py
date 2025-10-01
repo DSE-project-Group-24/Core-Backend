@@ -82,4 +82,4 @@ class AccidentAnalyticsFilters(BaseModel):
     collision_type: Optional[str] = None
     road_category: Optional[str] = None
     discharge_outcome: Optional[str] = None
-    hospital_id: Optional[int] = None
+    hospital_id: Optional[str] = None
