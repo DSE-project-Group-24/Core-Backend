@@ -8,17 +8,34 @@ TABLE = "Accident Record"  # exact table name with spaces
 def _strip_none(d: dict) -> dict:
     return {k: v for k, v in d.items() if v is not None}
 
+def _empty_strings_to_unknown(d: dict) -> dict:
+    """
+    Convert empty strings to None so the DB stores NULL instead of "".
+    Works for both insert and update payloads.
+    """
+    out = {}
+    for k, v in d.items():
+        if isinstance(v, str) and v.strip() == "":
+            out[k] = "Unknown"
+        else:
+            out[k] = v
+    return out
+
+
 def create_accident_record_service(accident: AccidentRecordCreate, user):
     supabase = get_supabase()
 
     payload = jsonable_encoder(accident, by_alias=True)
+    print("Payload:", payload)
     payload = _strip_none(payload)
 
     # Force manager = current user; ignore client value for security
-    user_id = getattr(user, "id", None) or getattr(user, "user_id", None)
+    user_id = user.get("sub")
     if not user_id:
         raise HTTPException(status_code=403, detail="Invalid user")
     payload["managed_by"] = user_id
+
+    payload = _empty_strings_to_unknown(payload)
 
     # Let DB defaults set Severity='U', Completed=false, created_on
     resp = supabase.table(TABLE).insert(payload).execute()

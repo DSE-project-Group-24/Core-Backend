@@ -5,6 +5,7 @@ from datetime import date
 # Pydantic v2 models
 
 class AccidentRecordBase(BaseModel):
+    model_config = ConfigDict(populate_by_name=True, validate_by_name=True)
     patient_id: str
 
     # DB column is managed_by (no space). You renamed to "managed_by" in DB – good.
@@ -34,6 +35,7 @@ class AccidentRecordBase(BaseModel):
     family_status: Optional[str] = Field(None, alias="Family current status")
     vehicle_insured: Optional[str] = Field(None, alias="vehicle insured")
     passenger_type: Optional[str] = Field(None, alias="Passenger type")
+    discharge_outcome: Optional[str] = Field(None, alias="Discharge Outcome")
 
     # categorical; use str (Yes/No/Unknown)
     first_aid_given: Optional[str] = Field(None, alias="First aid given at seen")
