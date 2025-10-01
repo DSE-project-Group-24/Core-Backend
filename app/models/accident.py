@@ -7,7 +7,7 @@ from datetime import date
 class AccidentRecordBase(BaseModel):
     model_config = ConfigDict(populate_by_name=True, validate_by_name=True)
     patient_id: str
-    managed_by: Optional[str] = Field(None, alias="managed by")
+    managed_by: Optional[str] = Field(None, alias="managed_by")
     incident_at_date: Optional[date] = Field(None, alias="incident at date")
     time_of_collision: Optional[str] = Field(None, alias="time of collision")
     mode_of_traveling: Optional[str] = Field(None, alias="Mode of traveling during accident")
