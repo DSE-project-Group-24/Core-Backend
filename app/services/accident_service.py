@@ -151,6 +151,8 @@ def get_accident_records_by_patient_service(patient_id: str, user):
 
     # 3) Collect all distinct manager user_ids
     managed_ids = list({rec.get("managed_by") for rec in records if rec.get("managed_by")})
+    for rec in records:
+        print("Managed by:", rec.get("managed_by"))
     if not managed_ids:
         # Nothing to enrich
         return records
@@ -199,5 +201,6 @@ def get_accident_records_by_patient_service(patient_id: str, user):
         else:
             # if not a nurse (or unknown hospital), keep original behavior
             rec["managed_by_name"] = manager_name
-
+    for rec in records:
+        print("Managed by 2:", rec.get("managed_by"))
     return records
