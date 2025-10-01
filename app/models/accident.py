@@ -39,6 +39,7 @@ class AccidentRecordBase(BaseModel):
     hospital_distance_from_home: Optional[str] = Field(None, alias="Hospital Distance From Home")
     traveling_expenditure_per_day: Optional[str] = Field(None, alias="Traveling Expenditure Per Day")
     any_other_hospital_admission_expenditure: Optional[str] = Field(None, alias="Any Other Hospital Admission Expenditure")
+    created_on: Optional[date] = Field(None, alias="created_on")
 
 
 class AccidentRecordCreate(AccidentRecordBase):
@@ -51,7 +52,7 @@ class AccidentRecordUpdate(AccidentRecordBase):
 class AccidentRecordOut(AccidentRecordBase):
     model_config = ConfigDict(from_attributes=True, validate_by_name=True)
     accident_id: str
-    created_on: date
+    created_on: Optional[date] = Field(None, alias="created_on")
     managed_by_name: Optional[str] = Field(None, alias="managed_by_name")
     # Note: createf on and managed by name were added by SHakthi for the record viewing readability.
     # created_on, severity etc. can be present in raw DB data, but not required here.
