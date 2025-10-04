@@ -17,7 +17,7 @@ class TestConfig:
         self.headers = {}
         self.auth_token = None
         
-    def setup_auth(self, email: str = "doctor@example.com", password: str = "password123"):
+    def setup_auth(self, email: str = "doctor@doctor.com", password: str = "doctor123"):
         """Setup authentication for tests"""
         login_data = {"email": email, "password": password}
         
@@ -53,6 +53,21 @@ class TestConfig:
             return response.status_code in [200, 404]  # 404 is fine, means server is up
         except:
             return False
+    
+    def get_test_credentials(self, user_type: str = "doctor") -> dict:
+        """Get test credentials for different user types"""
+        credentials = {
+            "doctor": {"email": "doctor@doctor.com", "password": "doctor123"},
+            "government": {"email": "a@gmail.com", "password": "111111"},
+            "nurse": {"email": "jom@example.com", "password": "secret123"},
+            "hospital_admin": {"email": "vijay@gmail.com", "password": "111111"}
+        }
+        return credentials.get(user_type, credentials["doctor"])
+    
+    def setup_auth_for_user_type(self, user_type: str = "doctor"):
+        """Setup authentication for specific user type"""
+        creds = self.get_test_credentials(user_type)
+        return self.setup_auth(creds["email"], creds["password"])
 
 # Global test configuration instance
 test_config = TestConfig()

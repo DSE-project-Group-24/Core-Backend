@@ -19,7 +19,7 @@ class TestAnalyticsFunctions:
     def test_analytics_endpoint_accessibility(self):
         """Test analytics endpoint basic accessibility"""
         try:
-            response = requests.get(f"{test_config.base_url}/analytics/", 
+            response = requests.get(f"{test_config.base_url}/analytics", 
                                   headers=test_config.headers, timeout=15)
             
             print(f"✅ Analytics endpoint response: {response.status_code}")

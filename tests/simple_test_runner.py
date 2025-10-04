@@ -61,6 +61,33 @@ def run_analytics_tests():
         except Exception as e:
             print(f"   ❌ FAILED: {e}")
 
+def run_updated_auth_tests():
+    """Run updated authentication tests with correct credentials"""
+    from tests.test_updated_auth import TestUpdatedAuthenticationFunctions
+    
+    print("\n🧪 Running Updated Authentication Tests")
+    print("=" * 40)
+    
+    test_auth = TestUpdatedAuthenticationFunctions()
+    
+    tests = [
+        ('Doctor Login', test_auth.test_doctor_login),
+        ('Government Login', test_auth.test_government_login),
+        ('Nurse Login', test_auth.test_nurse_login),
+        ('Hospital Admin Login', test_auth.test_hospital_admin_login),
+        ('All Credentials Check', test_auth.test_all_user_types_credentials),
+        ('Analytics with Auth', test_auth.test_analytics_with_correct_auth)
+    ]
+    
+    for test_name, test_func in tests:
+        try:
+            print(f"\n📋 {test_name}")
+            test_auth.setup_method()
+            test_func()
+            print(f"   ✅ PASSED")
+        except Exception as e:
+            print(f"   ❌ FAILED: {e}")
+
 def run_prediction_tests():
     """Run prediction tests"""
     from tests.test_prediction_functions import TestPredictionFunctions
@@ -94,15 +121,18 @@ def main():
         test_type = sys.argv[1].lower()
         if test_type == 'auth':
             run_auth_tests()
+        elif test_type == 'updated_auth':
+            run_updated_auth_tests()
         elif test_type == 'analytics':
             run_analytics_tests()
         elif test_type == 'predictions':
             run_prediction_tests()
         else:
-            print("Usage: python simple_test_runner.py [auth|analytics|predictions]")
+            print("Usage: python simple_test_runner.py [auth|updated_auth|analytics|predictions]")
     else:
         # Run all tests
         run_auth_tests()
+        run_updated_auth_tests()
         run_analytics_tests()
         run_prediction_tests()
     

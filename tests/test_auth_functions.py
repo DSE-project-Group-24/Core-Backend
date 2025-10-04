@@ -1,5 +1,6 @@
 """
-Functional Tests for Authentication Endpoints
+Basic Authentication Endpoint Tests (Smoke Tests)
+Tests endpoint existence and basic validation without requiring real users
 """
 import requests
 from datetime import datetime
