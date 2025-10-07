@@ -1,5 +1,5 @@
 from typing import Dict, Any, List, Optional
-from datetime import datetime
+from datetime import datetime, date
 from collections import defaultdict
 from app.models.analytics import (
     AccidentAnalyticsResponse,
@@ -45,12 +45,16 @@ def get_comprehensive_analytics_service(filters: AccidentAnalyticsFilters) -> Ac
     )
 
 
-def get_accident_summary_service(hospital_id: str) -> Dict[str, Any]:
+def get_accident_summary_service(hospital_id: str, start_date: Optional[date] = None, end_date: Optional[date] = None) -> Dict[str, Any]:
     """Get accident summary for a specific hospital - uses existing _get_filtered_accident_data function"""
     supabase = get_supabase()
     
-    # Create a basic filter with just hospital_id (no other filters)
-    filters = AccidentAnalyticsFilters(hospital_id=hospital_id)
+    # Create a filter with hospital_id and optional date range
+    filters = AccidentAnalyticsFilters(
+        hospital_id=hospital_id,
+        start_date=start_date,
+        end_date=end_date
+    )
     
     # Use the existing _get_filtered_accident_data function
     accident_data = _get_filtered_accident_data(supabase, filters)
