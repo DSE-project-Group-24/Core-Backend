@@ -1,18 +1,19 @@
 from fastapi import APIRouter, Depends, Query
 from typing import Optional
 from datetime import date
-from app.models.analytics import AccidentAnalyticsResponse, AccidentAnalyticsFilters
-from app.services.accident_analytics_service import (
+from fastapi.responses import JSONResponse
+from app.models.gov_dash import AccidentAnalyticsResponse, AccidentAnalyticsFilters
+from app.services.govDash_service import (
     get_comprehensive_analytics_service,
     get_accident_summary_service,
-    get_filter_options_service
+    get_filter_options_service,
+    get_accident_trends_service
 )
-from app.auth.dependencies import get_current_user
-from app.auth.hospital_dependency import get_user_hospital_id
+from app.auth.dependencies import government_personnel_required
 
 router = APIRouter()
 
-@router.get("", response_model=AccidentAnalyticsResponse, dependencies=[Depends(get_current_user)])
+@router.get("", response_model=AccidentAnalyticsResponse, dependencies=[Depends(government_personnel_required)])
 def get_accident_analytics(
     start_date: Optional[date] = Query(None, description="Filter accidents from this date"),
     end_date: Optional[date] = Query(None, description="Filter accidents to this date"),
@@ -23,9 +24,9 @@ def get_accident_analytics(
     collision_type: Optional[str] = Query(None, description="Filter by collision type"),
     road_category: Optional[str] = Query(None, description="Filter by road category"),
     discharge_outcome: Optional[str] = Query(None, description="Filter by discharge outcome"),
-    hospital_id: str = Depends(get_user_hospital_id)  # Get hospital_id from user context
+    hospital_id: Optional[int] = Query(None, description="Filter by hospital ID")
 ):
-    # Create filters object with hospital_id from user context
+    # Create filters object
     filters = AccidentAnalyticsFilters(
         start_date=start_date,
         end_date=end_date,
@@ -36,18 +37,18 @@ def get_accident_analytics(
         collision_type=collision_type,
         road_category=road_category,
         discharge_outcome=discharge_outcome,
-        hospital_id=hospital_id  # Use hospital_id from dependency injection
+        hospital_id=hospital_id
     )
     
     return get_comprehensive_analytics_service(filters)
 
-@router.get("/summary", dependencies=[Depends(get_current_user), Depends(get_user_hospital_id)])
-def get_accident_summary(hospital_id: str = Depends(get_user_hospital_id)):
-    return get_accident_summary_service(hospital_id)
+@router.get("/summary", dependencies=[Depends(government_personnel_required)])
+def get_accident_summary():
+    return get_accident_summary_service()
 
-@router.get("/filters/options", dependencies=[Depends(get_current_user), Depends(get_user_hospital_id)])
-def get_filter_options(hospital_id: str = Depends(get_user_hospital_id)):
-    return get_filter_options_service(hospital_id)
+@router.get("/filters/options", dependencies=[Depends(government_personnel_required)])
+def get_filter_options():
+    return get_filter_options_service()
 
 @router.get("/health")
 def analytics_health_check():
@@ -57,3 +58,23 @@ def analytics_health_check():
         "version": "1.0.0"
     }
 
+@router.get("/trendsAll", summary="Get accident trends by month, year, and day-of-week")
+def get_accident_trends():
+    """
+    Returns accident statistics grouped by:
+    - Month (YYYY-MM)
+    - Year
+    - Day of the week
+
+    Each group contains:
+    - total accidents
+    - serious accidents (Severity = 'S')
+    """
+    try:
+        data = get_accident_trends_service()
+        return JSONResponse(content=data)
+    except Exception as e:
+        return JSONResponse(
+            content={"error": str(e)},
+            status_code=500
+        )
