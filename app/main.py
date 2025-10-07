@@ -12,7 +12,7 @@ from app.routes.medical_routes import router as medical_router
 from app.routes.gov_routes import router as gov_router
 from app.routes.prediction_routes import router as prediction_router
 from app.routes.prediction_transferprobability import router as prediction_transferprobability_router
-#from app.routes.hospital_stay_predictions_routes import router as hospital_stay_predictions_router
+# from app.routes.hospital_stay_predictions_routes import router as hospital_stay_predictions_router
 from app.routes.accident_analytics_routes import router as analytics_router  
 
 # from app.routes.govDash_routes import router as gov_dash_routes
@@ -52,18 +52,6 @@ app.include_router(prediction_transferprobability_router, prefix="/predictions",
 # Include analytics routes
 app.include_router(analytics_router, prefix="/analytics", tags=["Accident Analytics"])
 app.include_router(govDash_routes, prefix="/govDash", tags=["Government Dashboard"])
-
-# app.add_middleware(
-#     CORSMiddleware,
-#     allow_origins=origins,
-#     # allow_origins=['*'],
-#     allow_credentials=True,
-#     allow_methods=["*"],
-#     allow_headers=["*"],
-# )
-
-
-
 
 
 @app.get("/_routes")

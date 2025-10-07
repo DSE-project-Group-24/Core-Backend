@@ -42,8 +42,12 @@ def get_accident_analytics(
     return get_comprehensive_analytics_service(filters)
 
 @router.get("/summary", dependencies=[Depends(get_current_user), Depends(get_user_hospital_id)])
-def get_accident_summary(hospital_id: str = Depends(get_user_hospital_id)):
-    return get_accident_summary_service(hospital_id)
+def get_accident_summary(
+    start_date: Optional[date] = Query(None, description="Filter accidents from this date"),
+    end_date: Optional[date] = Query(None, description="Filter accidents to this date"),
+    hospital_id: str = Depends(get_user_hospital_id)
+):
+    return get_accident_summary_service(hospital_id, start_date, end_date)
 
 @router.get("/filters/options", dependencies=[Depends(get_current_user), Depends(get_user_hospital_id)])
 def get_filter_options(hospital_id: str = Depends(get_user_hospital_id)):

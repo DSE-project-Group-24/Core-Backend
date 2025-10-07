@@ -19,3 +19,6 @@ joblib
 statsmodels
 polars 
 pyarrow
+# Testing dependencies
+requests
+pytest
