@@ -2,6 +2,7 @@ from fastapi import HTTPException
 from fastapi.encoders import jsonable_encoder
 from app.db import get_supabase
 from app.models.accident import AccidentRecordCreate, AccidentRecordUpdate
+from .injuries_service import bulk_upsert as injuries_bulk_upsert, list_injuries as injuries_list
 
 TABLE = "Accident Record"  # exact table name with spaces
 
@@ -26,7 +27,7 @@ def create_accident_record_service(accident: AccidentRecordCreate, user):
     supabase = get_supabase()
 
     payload = jsonable_encoder(accident, by_alias=True)
-    print("Payload:", payload)
+    #print("Payload:", payload)
     payload = _strip_none(payload)
 
     # Force manager = current user; ignore client value for security
@@ -37,10 +38,23 @@ def create_accident_record_service(accident: AccidentRecordCreate, user):
 
     payload = _empty_strings_to_unknown(payload)
 
+    injuries = payload.pop("injuries", None)
+    print("Injuries:", injuries)
     # Let DB defaults set Severity='U', Completed=false, created_on
     resp = supabase.table(TABLE).insert(payload).execute()
     if not resp.data:
         raise HTTPException(status_code=500, detail="Failed to create accident record.")
+    print("Resp:", resp.data[0])
+    accident_id = resp.data[0].get("accident_id")
+
+    if injuries:
+        try:
+            injuries_bulk_upsert(accident_id, [i | {"accident_id": accident_id} for i in injuries])
+        except Exception as e:
+            #Rollback by deleting the accident record we just created
+            supabase.table("Accident Record").delete().eq("accident_id", accident_id).execute()
+            raise
+        resp.data[0]["injuries"] = injuries_list(accident_id)
     return resp.data[0]
 
 def edit_accident_record_service(accident_id: str, accident: AccidentRecordUpdate, user):
@@ -109,6 +123,7 @@ def _get_value(obj, *keys, default=None):
 
 def get_accident_records_by_patient_service(patient_id: str, user):
     supabase = get_supabase()
+    INJURIES_TABLE = "Injury"  # exact table name with spaces
 
     # 1) Identify current user and role
     current_user_id = user.get("sub")
@@ -148,11 +163,39 @@ def get_accident_records_by_patient_service(patient_id: str, user):
     records = resp.data or []
     if not records:
         return []
+    
+    # ---- NEW: prefill empty injuries list so the shape is consistent
+    for rec in records:
+        rec["injuries"] = []
+
+    # ---- NEW: fetch all injuries for those accidents in a single call
+    accident_ids = [r.get("accident_id") for r in records if r.get("accident_id")]
+    if accident_ids:
+        inj_resp = (
+            supabase.table(INJURIES_TABLE)
+            .select("accident_id, injury_no, site_of_injury, type_of_injury, side, investigation_done, severity")
+            .in_("accident_id", accident_ids)
+            .order("injury_no", desc=False)
+            .execute()
+        )
+        injuries = inj_resp.data or []
+
+        # group by accident_id
+        by_acc = {}
+        for row in injuries:
+            aid = row.get("accident_id")
+            by_acc.setdefault(aid, []).append(row)
+
+        # attach to matching records
+        for rec in records:
+            aid = rec.get("accident_id")
+            if aid in by_acc:
+                rec["injuries"] = by_acc[aid]
 
     # 3) Collect all distinct manager user_ids
     managed_ids = list({rec.get("managed_by") for rec in records if rec.get("managed_by")})
-    for rec in records:
-        print("Managed by:", rec.get("managed_by"))
+    #for rec in records:
+        #print("Managed by:", rec.get("managed_by"))
     if not managed_ids:
         # Nothing to enrich
         return records
@@ -201,6 +244,6 @@ def get_accident_records_by_patient_service(patient_id: str, user):
         else:
             # if not a nurse (or unknown hospital), keep original behavior
             rec["managed_by_name"] = manager_name
-    for rec in records:
-        print("Managed by 2:", rec.get("managed_by"))
+    # for rec in records:
+    #     print("Managed by 2:", rec.get("managed_by"))
     return records

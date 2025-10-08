@@ -10,7 +10,7 @@ class InjuryBase(BaseModel):
     site_of_injury: str = Field(..., min_length=1)
     type_of_injury: str = Field(..., min_length=1)
     side: Side
-    investigation_done: Optional[str] = Field(None, alias="Investigation Done")
+    investigation_done: Optional[str] = Field(None, alias="investigation_done")
 
 class InjuryIn(InjuryBase):
     # if not provided, backend will assign the next injury_no
@@ -20,7 +20,7 @@ class InjuryUpdate(BaseModel):
     site_of_injury:   Optional[str] = None
     type_of_injury: Optional[str] = None
     side: Optional[Side] = None
-    investigation_done: Optional[str] = Field(None, alias="Investigation Done")
+    investigation_done: Optional[str] = Field(None, alias="investigation_done")
 
 class InjuryOut(InjuryBase):
     accident_id: UUID
