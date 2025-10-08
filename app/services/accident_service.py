@@ -2,8 +2,12 @@ from fastapi import HTTPException
 from fastapi.encoders import jsonable_encoder
 from app.db import get_supabase
 from app.models.accident import AccidentRecordCreate, AccidentRecordUpdate
-from .injuries_service import bulk_upsert as injuries_bulk_upsert, list_injuries as injuries_list
-
+from typing import Dict, Any, List, Set
+from app.services.injuries_service import (
+    bulk_upsert as injuries_bulk_upsert,
+    list_injuries as injuries_list,
+    delete_injury as injuries_delete,
+)
 TABLE = "Accident Record"  # exact table name with spaces
 
 def _strip_none(d: dict) -> dict:
@@ -57,15 +61,8 @@ def create_accident_record_service(accident: AccidentRecordCreate, user):
         resp.data[0]["injuries"] = injuries_list(accident_id)
     return resp.data[0]
 
-# app/services/accidents_service.py (or wherever this lives)
-from fastapi import HTTPException
-from typing import Dict, Any, List, Set
-from app.db import get_supabase
-from app.services.injuries_service import (
-    bulk_upsert as injuries_bulk_upsert,
-    list_injuries as injuries_list,
-    delete_injury as injuries_delete,
-)
+
+
 # ... import your models and _empty_strings_to_unknown as you already do ...
 
 TABLE = "Accident Record"  # your existing constant
