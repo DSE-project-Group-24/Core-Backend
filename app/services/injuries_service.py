@@ -4,7 +4,7 @@ from typing import List, Dict, Any, Literal
 from app.db import get_supabase
 import joblib
 import os
-from sklearn.compose import ColumnTransformer
+import pandas as pd
 
 
 try:
@@ -42,12 +42,36 @@ def _load_model():
             raise HTTPException(status_code=500, detail=f"Model load failed: {e}")
     return _model_cache
 _load_model()
+
 def infer_severity(site_of_injury: str, type_of_injury: str) -> Severity:
-    s = f"{site_of_injury} {type_of_injury}".lower()
-    if any(k in s for k in ["head", "skull", "brain", "intracranial", "spine", "spinal"]):
-        return "severe"
-    if any(k in s for k in ["fracture", "dislocation", "thorax", "abdomen"]):
-        return "moderate"
+    """
+    Predict severity using the trained sklearn model that expects:
+        DataFrame with columns ["Site of Injury No1", "Type of injury No 1"]
+    Returns 'severe', 'moderate', or 'unknown'.
+    """
+    try:
+        model = _load_model()
+
+        # Build DataFrame exactly as used during training
+        X = pd.DataFrame([{
+            "Site of Injury No1": site_of_injury,
+            "Type of injury No 1": type_of_injury,
+        }])
+
+        # Predict (model outputs ndarray)
+        y_pred = model.predict(X)
+        if y_pred is not None and len(y_pred) > 0:
+            pred = y_pred[0]
+            if pred == "S":
+                return "severe"
+            elif pred == "M":
+                return "moderate"
+            else:
+                return "unknown"
+
+    except Exception as e:
+        print(f"[infer_severity] ML inference failed, falling back. err={e}")
+
     return "unknown"
 
 def _next_injury_no(accident_id: str) -> int:
