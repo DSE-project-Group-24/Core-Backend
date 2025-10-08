@@ -15,10 +15,11 @@ bcrypt==4.0.1
 pandas==2.2.2
 mlxtend==0.23.1
 python-multipart==0.0.9
-joblib
+joblib==1.5.2
 statsmodels
 polars 
 pyarrow
 # Testing dependencies
 requests
 pytest
+scikit-learn==1.6.1
