@@ -1,5 +1,6 @@
 from pydantic import BaseModel, Field, ConfigDict
-from typing import Optional
+from typing import Optional, List
+from app.models.injury import InjuryIn, InjuryOut
 from datetime import date
 
 # Pydantic v2 models
@@ -40,6 +41,7 @@ class AccidentRecordBase(BaseModel):
     traveling_expenditure_per_day: Optional[str] = Field(None, alias="Traveling Expenditure Per Day")
     any_other_hospital_admission_expenditure: Optional[str] = Field(None, alias="Any Other Hospital Admission Expenditure")
     created_on: Optional[date] = Field(None, alias="created_on")
+    injuries: Optional[List[InjuryIn]] = None 
 
 
 class AccidentRecordCreate(AccidentRecordBase):
@@ -48,11 +50,14 @@ class AccidentRecordCreate(AccidentRecordBase):
 class AccidentRecordUpdate(AccidentRecordBase):
     patient_id: Optional[str] = None
     managed_by: Optional[str] = None
+    injuries: Optional[List[InjuryIn]] = None
+    delete_missing_injuries: Optional[bool] = False
 
 class AccidentRecordOut(AccidentRecordBase):
     model_config = ConfigDict(from_attributes=True, validate_by_name=True)
     accident_id: str
     created_on: Optional[date] = Field(None, alias="created_on")
     managed_by_name: Optional[str] = Field(None, alias="managed_by_name")
+    injuries: Optional[List[InjuryOut]] = []
     # Note: createf on and managed by name were added by SHakthi for the record viewing readability.
     # created_on, severity etc. can be present in raw DB data, but not required here.
