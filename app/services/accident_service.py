@@ -246,4 +246,9 @@ def get_accident_records_by_patient_service(patient_id: str, user):
             rec["managed_by_name"] = manager_name
     # for rec in records:
     #     print("Managed by 2:", rec.get("managed_by"))
+    # print("Records with injuries:")
+    # for rec in records:
+    #     print(rec.get("injuries"))
+    # print("records:")
+    # print(records)
     return records
