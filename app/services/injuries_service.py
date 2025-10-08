@@ -2,6 +2,10 @@
 from fastapi import HTTPException
 from typing import List, Dict, Any, Literal
 from app.db import get_supabase
+import joblib
+import os
+from sklearn.compose import ColumnTransformer
+
 
 try:
     # supabase-py -> postgrest exceptions live here
@@ -18,6 +22,26 @@ TABLE = "Injury"
 # Column with a space must be quoted in selects/updates
 INVESTIGATION_COL = '"investigation_done"'
 
+_model_cache = None
+
+def _load_model():
+    """Load and cache the severity prediction model."""
+    global _model_cache
+    if _model_cache is None:
+        model_path = os.path.join(
+            os.path.dirname(__file__),  # directory of this service file
+            "..",  "..",                     # go up 2 levels
+            "trained_models",
+            "injury_severity_simple_model-7.pkl",
+        )
+        model_path = os.path.abspath(model_path)
+        try:
+            _model_cache = joblib.load(model_path)
+            print(f"✅ Loaded severity model from: {model_path}")
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Model load failed: {e}")
+    return _model_cache
+_load_model()
 def infer_severity(site_of_injury: str, type_of_injury: str) -> Severity:
     s = f"{site_of_injury} {type_of_injury}".lower()
     if any(k in s for k in ["head", "skull", "brain", "intracranial", "spine", "spinal"]):
