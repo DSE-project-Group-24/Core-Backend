@@ -21,3 +21,15 @@ class HospitalUpdate(BaseModel):
     city: Optional[str] = None
     contact_number: Optional[str] = None
     Region: Optional[str] = None
+
+
+class Hospital(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    
+    hospital_id: str
+    name: str
+    Type: str
+    address: Optional[str] = None
+    city: Optional[str] = None
+    contact_number: Optional[str] = None
+    Region: Optional[str] = None
