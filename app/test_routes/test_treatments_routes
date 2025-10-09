@@ -1,0 +1,30 @@
+# app/routers/treatments.py
+from fastapi import APIRouter, Depends
+from app.services.treatments_service import (
+    list_treatments, create_treatment, update_treatment, delete_treatment, bulk_upsert
+)
+from app.models.treatments import TreatmentCreate, TreatmentUpdate, TreatmentBulk
+from app.auth import get_current_user  # your existing auth dependency
+
+router = APIRouter(prefix="/accidents/{accident_id}/treatments", tags=["Treatments"])
+
+@router.get("")
+def list_(accident_id: str, user=Depends(get_current_user)):
+    return list_treatments(accident_id)
+
+@router.post("")
+def create_(accident_id: str, payload: TreatmentCreate, user=Depends(get_current_user)):
+    return create_treatment(accident_id, payload.model_dump(exclude_unset=True), user)
+
+@router.put("/bulk")
+def bulk_(accident_id: str, payload: TreatmentBulk, user=Depends(get_current_user)):
+    return bulk_upsert(accident_id, [i.model_dump(exclude_unset=True) for i in payload.items], user)
+
+@router.patch("/{treatment_no}")
+def update_(accident_id: str, treatment_no: int, payload: TreatmentUpdate, user=Depends(get_current_user)):
+    return update_treatment(accident_id, treatment_no, payload.model_dump(exclude_unset=True), user)
+
+@router.delete("/{treatment_no}")
+def delete_(accident_id: str, treatment_no: int, user=Depends(get_current_user)):
+    delete_treatment(accident_id, treatment_no, user)
+    return {"ok": True}
