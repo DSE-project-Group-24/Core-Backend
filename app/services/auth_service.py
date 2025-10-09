@@ -35,12 +35,45 @@ def login_user_service(credentials: UserLogin):
     # Check hashed password
     if not verify_password(credentials.password, user["password"]):
         raise HTTPException(status_code=401, detail="Invalid email or password")
-
+    
+    flag = False
+    # Check role-specific tables for hosputal information
+    try:
+        if user["role"] not in ["government_personnel"]:
+            STAFF_TABLE = ""
+            flag = True
+            if user["role"] in ["nurse"]:
+                STAFF_TABLE = "Nurse"
+            elif user["role"] in ["doctor"]:
+                STAFF_TABLE = "Doctor"
+            elif user["role"] in ["hospital_administrator"]:
+                STAFF_TABLE = "Hospital_Administrator"
+            resp = (
+                supabase.table(STAFF_TABLE)
+                .select("hospital_id, Hospital(name)")   # join to Hospital via FK
+                .eq("user_id", user["user_id"])
+                .single()
+                .execute()
+            )
+            data = handle_response(resp)
+            if not data:
+                raise HTTPException(status_code=401, detail="You are not assigned to any hospital. Please contact an Administrator.")
+    except APIError as e:
+        raise HTTPException(status_code=401, detail="You are not assigned to any hospital. Please contact an Administrator.")
     # Create tokens
     token_data = {"sub": str(user["user_id"]), "email": user["email"], "role": user["role"], "name": user["name"]   }
     access_token = create_access_token(token_data)
     refresh_token = create_refresh_token(token_data)
-
+    if flag:
+        return {
+            "access_token": access_token,
+            "refresh_token": refresh_token,
+            "user_id": user["user_id"],
+            "name": user["name"],
+            "role": user["role"],
+            "hospital_id": data.get("hospital_id"),
+            "hospital_name":(data.get("Hospital") or {}).get("name")
+        }
     return {
         "access_token": access_token,
         "refresh_token": refresh_token,
