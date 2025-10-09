@@ -7,18 +7,14 @@ TRANSFER_TABLE = "Transfer"             # exact name
 HOSPITAL_PATIENT_TABLE = "Hospital_Patient"
 USER_TABLE = "User"
 NURSE_TABLE = "Nurse"
-ADMIN_TABLE = "Admin"
+ADMIN_TABLE = "Hospital_Administrator"
 
 
 # ---------------------------
 # Helpers
 # ---------------------------
 
-def _require_user(user: Dict[str, Any]) -> str:
-    uid = user.get("sub") or user.get("user_id") or user.get("id")
-    if not uid:
-        raise HTTPException(status_code=403, detail="Invalid user.")
-    return str(uid)
+
 
 
 def _get_user_role_and_hospital(user_id: str) -> Tuple[Optional[str], Optional[str]]:
@@ -122,9 +118,12 @@ def create_transfer_request_service(
     - approved_by and "transfer time to second hospital" are NOT set here
     """
     supabase = get_supabase()
-    user_id = _require_user(user)
+    print(user)
+    user_id = user.get("sub")
+    print(user_id)
     role, nurse_hospital_id = _get_user_role_and_hospital(user_id)
 
+    print("comes here")
     if role != "nurse":
         raise HTTPException(status_code=403, detail="Only nurses can request transfers.")
 
@@ -136,7 +135,7 @@ def create_transfer_request_service(
 
     if str(to_hospital_id) == str(nurse_hospital_id):
         raise HTTPException(status_code=400, detail="Destination hospital must be different.")
-
+    print("makes it here")
     payload = {
         "accident_id": accident_id,
         "from_hospital": nurse_hospital_id,
@@ -147,13 +146,15 @@ def create_transfer_request_service(
     }
 
     resp = supabase.table(TRANSFER_TABLE).insert(payload).execute()
+    print(resp)
     if not resp.data:
+        print("issue?")
         # surface db error message if available
         msg = getattr(resp, "error", None)
         msg = getattr(msg, "message", None) if msg else "Failed to create transfer request."
         raise HTTPException(status_code=500, detail=msg)
 
-    return resp.data[0]
+    return resp
 
 
 # ---------------------------
@@ -165,7 +166,7 @@ def list_my_outgoing_transfers_service(user: Dict[str, Any]) -> List[Dict[str, A
     For a nurse: list transfers created from their hospital (outgoing).
     """
     supabase = get_supabase()
-    user_id = _require_user(user)
+    user_id = user.get("sub")
     role, nurse_hospital_id = _get_user_role_and_hospital(user_id)
 
     if role != "nurse" or not nurse_hospital_id:
@@ -186,7 +187,7 @@ def list_incoming_transfers_for_admin_service(user: Dict[str, Any]) -> List[Dict
     For an admin: list pending transfers where to_hospital = admin's hospital and approved_by is NULL.
     """
     supabase = get_supabase()
-    user_id = _require_user(user)
+    user_id = user.get("sub")
     role, admin_hospital_id = _get_user_role_and_hospital(user_id)
 
     if role != "admin" or not admin_hospital_id:
@@ -227,7 +228,7 @@ def approve_transfer_service(
     Returns the updated Transfer row (optionally include expanded info in the SQL function).
     """
     supabase = get_supabase()
-    admin_id = _require_user(user)
+    admin_id = user.get("sub")
     role, admin_hospital_id = _get_user_role_and_hospital(admin_id)
 
     if role != "admin":
@@ -291,7 +292,7 @@ def reject_transfer_service(
       - Deletes the Transfer row (does NOT touch Accident Record or Hospital_Patient)
     """
     supabase = get_supabase()
-    admin_id = _require_user(user)
+    admin_id = user.get("sub")
     role, admin_hospital_id = _get_user_role_and_hospital(admin_id)
 
     if role != "admin" or not admin_hospital_id:

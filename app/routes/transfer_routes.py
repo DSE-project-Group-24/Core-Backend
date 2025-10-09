@@ -1,7 +1,7 @@
 from typing import Dict, Any, List
 from fastapi import APIRouter, Depends, HTTPException, Request
 from app.models.transfer import   TransferApprove, TransferReject, TransferCreateIn, TransferApproveIn
-
+from app.auth.dependencies import get_current_user
 from app.services.transfer_service import (
     create_transfer_request_service,
     list_my_outgoing_transfers_service,
@@ -11,23 +11,11 @@ from app.services.transfer_service import (
 )
 router = APIRouter()
 
-def get_current_user(request: Request) -> Dict[str, Any]:
-    """
-    Lightweight auth adapter:
-    - Expects `Authorization: Bearer <user_id>` (same pattern you used elsewhere).
-    - Returns a dict with `sub` that services expect.
-    """
-    auth = request.headers.get("Authorization") or ""
-    parts = auth.split()
-    if len(parts) == 2 and parts[0].lower() == "bearer":
-        return {"sub": parts[1]}
-    raise HTTPException(status_code=401, detail="Unauthorized")
-
 
 @router.post("/", summary="Create a transfer request (nurse)")
 def create_transfer(
     body: TransferCreateIn,
-    user: Dict[str, Any] = Depends(get_current_user),
+    user= Depends(get_current_user),
 ):
     """
     - Only a nurse who **currently manages** the accident may create the transfer.
@@ -36,7 +24,7 @@ def create_transfer(
     """
     return create_transfer_request_service(
         accident_id=body.accident_id,
-        to_hospital_id=body.to_hospital_id,
+        to_hospital_id=body.to_hospital,
         user=user,
     )
 

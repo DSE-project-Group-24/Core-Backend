@@ -41,6 +41,7 @@ def create_accident_record_service(accident: AccidentRecordCreate, user):
     print("after strip none")
     # Force manager = current user; ignore client value for security
     user_id = user.get("sub")
+    print(user.get("sub"))
     if not user_id:
         raise HTTPException(status_code=403, detail="Invalid user")
     payload["managed_by"] = user_id

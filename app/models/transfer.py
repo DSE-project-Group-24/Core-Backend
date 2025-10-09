@@ -34,7 +34,7 @@ class TransferReject(BaseModel):
 
 class TransferCreateIn(BaseModel):
     accident_id: str = Field(..., description="Accident being transferred")
-    to_hospital_id: str = Field(..., description="Destination hospital")
+    to_hospital: str = Field(..., description="Destination hospital")
 
 
 class TransferApproveIn(BaseModel):
