@@ -117,7 +117,8 @@ def create_injury(accident_id: str, payload: Dict[str, Any]) -> Dict[str, Any]:
     try:
         injury_no = payload.get("injury_no") or _next_injury_no(accident_id)
         sev = infer_severity(payload["site_of_injury"], payload["type_of_injury"])
-
+        print("Side:")
+        print(payload["side"])
         # Build row. Use dict with quoted key for the spaced column.
         row = {
             "accident_id": accident_id,

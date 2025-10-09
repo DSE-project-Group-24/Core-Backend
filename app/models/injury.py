@@ -3,13 +3,13 @@ from pydantic import BaseModel, Field
 from typing import Optional, List, Literal
 from uuid import UUID
 
-Side = Literal["Front","Back","Left","Right","N/A","Unknown"]
+#Side = Literal["Front","Back","Left","Right","N/A","Unknown"]
 Severity = Literal["severe","moderate","unknown"]
 
 class InjuryBase(BaseModel):
     site_of_injury: str = Field(..., min_length=1)
     type_of_injury: str = Field(..., min_length=1)
-    side: Side
+    side: Optional[str] = Field(None, alias="side")  #Side
     investigation_done: Optional[str] = Field(None, alias="investigation_done")
 
 class InjuryIn(InjuryBase):
@@ -19,7 +19,7 @@ class InjuryIn(InjuryBase):
 class InjuryUpdate(BaseModel):
     site_of_injury:   Optional[str] = None
     type_of_injury: Optional[str] = None
-    side: Optional[Side] = None
+    side: Optional[str] = Field(None, alias="side")  #Side
     investigation_done: Optional[str] = Field(None, alias="investigation_done")
 
 class InjuryOut(InjuryBase):
