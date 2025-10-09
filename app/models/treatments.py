@@ -14,6 +14,7 @@ class TreatmentBase(BaseModel):
 class TreatmentCreate(TreatmentBase):
     pass
 
+TreatmentIn = TreatmentCreate
 class TreatmentUpdate(TreatmentBase):
     pass
 
