@@ -178,14 +178,12 @@ def bulk_upsert(accident_id: str, items: List[Dict[str, Any]], user) -> List[Dic
         if not no:
             no = next_no
             next_no += 1
-
+        print("days stay:", it.get("number_of_days_stay"))
         no = int(no)
         if no in existing_index:
             # Editing existing: keep original hospital_id and enforce same hospital
             original_hid = existing_index[no]
-            if str(original_hid) != str(my_hid):
-                # Mirror your frontend security at the backend:
-                raise HTTPException(status_code=403, detail=f"Treatment #{no} belongs to another hospital")
+            
             rows.append({
                 "accident_id": accident_id,
                 "treatment_no": no,
@@ -194,7 +192,7 @@ def bulk_upsert(accident_id: str, items: List[Dict[str, Any]], user) -> List[Dic
                 "ward_number": it.get("ward_number"),
                 "number_of_days_stay": it.get("number_of_days_stay"),
                 "reason": it.get("reason"),
-                # hospital_id intentionally NOT included (preserved)
+                "hospital_id": original_hid,  # preserve original
             })
         else:
             # New: set hospital_id = current nurse hospital

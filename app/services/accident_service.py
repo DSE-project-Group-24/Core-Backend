@@ -34,10 +34,11 @@ def _empty_strings_to_unknown(d: dict) -> dict:
 
 def create_accident_record_service(accident: AccidentRecordCreate, user):
     supabase = get_supabase()
-
+    print("before payload")
     payload = jsonable_encoder(accident, by_alias=True)
+    print("after payload")
     payload = _strip_none(payload)
-
+    print("after strip none")
     # Force manager = current user; ignore client value for security
     user_id = user.get("sub")
     if not user_id:
@@ -60,6 +61,7 @@ def create_accident_record_service(accident: AccidentRecordCreate, user):
     try:
         # Upsert injuries if provided
         if injuries:
+            print("got here")
             injuries_bulk_upsert(
                 accident_id,
                 [i | {"accident_id": accident_id} for i in injuries]
@@ -332,12 +334,29 @@ def get_accident_records_by_patient_service(patient_id: str, user):
     if accident_ids:
         tr_resp = (
             supabase.table(TREATMENTS_TABLE)
-            .select("accident_id, treatment_no, treatment_type, description, hospital_id, ward_number, number_of_days_stay, reason")
+            .select(
+                """
+                accident_id,
+                treatment_no,
+                treatment_type,
+                description,
+                hospital_id,
+                ward_number,
+                number_of_days_stay,
+                reason,
+                Hospital(name)         -- 👈 pull related hospital name
+                """
+            )
             .in_("accident_id", accident_ids)
             .order("treatment_no", desc=False)
             .execute()
         )
         treatments = tr_resp.data or []
+
+        # Flatten Hospital(name) → hospital_name for the frontend
+        for row in treatments:
+            row["hospital_name"] = (row.get("Hospital") or {}).get("name")
+            row.pop("Hospital", None)
 
         by_acc_tr = {}
         for row in treatments:

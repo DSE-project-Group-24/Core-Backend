@@ -21,6 +21,7 @@ class TreatmentUpdate(TreatmentBase):
 class TreatmentOut(TreatmentBase):
     accident_id: str
     hospital_id: Optional[str] = None
+    hospital_name: Optional[str] = None
 
 class TreatmentBulk(BaseModel):
     items: List[TreatmentBase]
