@@ -14,6 +14,7 @@ from app.routes.prediction_routes import router as prediction_router
 from app.routes.prediction_transferprobability import router as prediction_transferprobability_router
 # from app.routes.hospital_stay_predictions_routes import router as hospital_stay_predictions_router
 from app.routes.accident_analytics_routes import router as analytics_router  
+from app.routes.discharge_outcome_routes import router as discharge_outcome_router
 
 # from app.routes.govDash_routes import router as gov_dash_routes
 from app.routes.govDash_routes import router as govDash_routes 
@@ -48,6 +49,7 @@ app.include_router(prediction_router, prefix="/predictions", tags=["Predictions"
 
 app.include_router(prediction_transferprobability_router, prefix="/predictions", tags=["Predictions"])
 #app.include_router(hospital_stay_predictions_router, prefix="/hospitalstay", tags=["Hospital Stay Predictions"])
+app.include_router(discharge_outcome_router, prefix="/predictions", tags=["Discharge Outcome Predictions"])
 
 # Include analytics routes
 app.include_router(analytics_router, prefix="/analytics", tags=["Accident Analytics"])
