@@ -1,4 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, Path
+from typing import List
+from app.models.hospital import Hospital
+
 from app.models.hospital import HospitalCreate, HospitalUpdate
 from app.models.hospital_staff import AssignStaffToHospital
 from app.services.hospital_staff_service import (
@@ -6,15 +9,20 @@ from app.services.hospital_staff_service import (
     add_nurse_to_hospital_service,
     get_doctors_count_service,
     get_nurses_count_service, get_patients_count_service
+
 )
 from app.services.hospital_service import (
     create_hospital_service,
     get_all_hospitals_service,
     get_hospital_by_id_service,
     get_hospital_by_name_service,
-    edit_hospital_service
+    edit_hospital_service,
+    get_all_hospitals,
+    search_hospitals_by_name
+
+
 )
-from app.auth.dependencies import get_current_user, hospital_admin_required
+from app.auth.dependencies import get_current_user, hospital_admin_required,government_personnel_required
 from app.auth.hospital_dependency import get_user_hospital_id
 
 router = APIRouter()
@@ -70,3 +78,14 @@ async def get_patients_count(hospital_id: str = Depends(get_user_hospital_id)):
     """Get the count of all patients in the logged-in hospital administrator's hospital"""
     return get_patients_count_service(hospital_id)
 
+# Routes for access hospitals to goverment persons
+
+
+
+# @router.get("/all", dependencies=[Depends(government_personnel_required)])
+# def get_all_hospitals():
+#     return get_all_hospitals_service()
+
+@router.get("/all")
+def get_all_hospitals():
+    return get_all_hospitals_service()

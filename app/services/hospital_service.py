@@ -1,6 +1,8 @@
 from app.models.hospital import HospitalCreate, HospitalUpdate
 from fastapi import HTTPException
 from app.db import get_supabase
+from app.models.hospital import Hospital
+from typing import List, Optional
 
 # Service: Create hospital
 def create_hospital_service(hospital: HospitalCreate):
@@ -68,3 +70,13 @@ def edit_hospital_service(hospital_id: str, hospital: HospitalUpdate):
         raise HTTPException(status_code=400, detail="No fields were updated.")
         
     return {"message": "Hospital updated successfully.", "hospital_id": hospital_id}
+
+def get_all_hospitals() -> List[Hospital]:
+    supabase = get_supabase()
+    result = supabase.table('Hospital').select('*').execute()
+    return [Hospital.model_validate(h) for h in result.data]
+
+def search_hospitals_by_name(name: str) -> List[Hospital]:
+    supabase = get_supabase()
+    result = supabase.table('Hospital').select('*').ilike('name', f'%{name}%').execute()
+    return [Hospital.model_validate(h) for h in result.data]

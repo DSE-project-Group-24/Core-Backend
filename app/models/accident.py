@@ -1,13 +1,19 @@
+# app/models/accident.py
 from pydantic import BaseModel, Field, ConfigDict
-from typing import Optional
+from typing import Optional, List
 from datetime import date
+
+from app.models.injury import InjuryIn, InjuryOut
+from app.models.treatments import TreatmentIn, TreatmentOut  # <-- NEW
 
 # Pydantic v2 models
 
 class AccidentRecordBase(BaseModel):
     model_config = ConfigDict(populate_by_name=True, validate_by_name=True)
+
     patient_id: str
     managed_by: Optional[str] = Field(None, alias="managed_by")
+
     incident_at_date: Optional[date] = Field(None, alias="incident at date")
     time_of_collision: Optional[str] = Field(None, alias="time of collision")
     mode_of_traveling: Optional[str] = Field(None, alias="Mode of traveling during accident")
@@ -34,25 +40,49 @@ class AccidentRecordBase(BaseModel):
     passenger_type: Optional[str] = Field(None, alias="Passenger type")
     discharge_outcome: Optional[str] = Field(None, alias="Discharge Outcome")
     first_aid_given: Optional[str] = Field(None, alias="First aid given at seen")
+
     completed: Optional[bool] = Field(None, alias="Completed")
     severity: Optional[str] = Field(None, alias="Severity")
+
     hospital_distance_from_home: Optional[str] = Field(None, alias="Hospital Distance From Home")
     traveling_expenditure_per_day: Optional[str] = Field(None, alias="Traveling Expenditure Per Day")
-    any_other_hospital_admission_expenditure: Optional[str] = Field(None, alias="Any Other Hospital Admission Expenditure")
+    any_other_hospital_admission_expenditure: Optional[str] = Field(
+        None, alias="Any Other Hospital Admission Expenditure"
+    )
+
     created_on: Optional[date] = Field(None, alias="created_on")
+
+    # Children
+    injuries: Optional[List[InjuryIn]] = None
+    treatments: Optional[List[TreatmentIn]] = None  # <-- NEW
 
 
 class AccidentRecordCreate(AccidentRecordBase):
     pass
 
+
 class AccidentRecordUpdate(AccidentRecordBase):
+    # Allow partials
     patient_id: Optional[str] = None
     managed_by: Optional[str] = None
 
+    injuries: Optional[List[InjuryIn]] = None
+    treatments: Optional[List[TreatmentIn]] = None  # <-- NEW
+
+    # Optional knobs if you ever want explicit deletion semantics flags
+    delete_missing_injuries: Optional[bool] = False
+    delete_missing_treatments: Optional[bool] = False  # <-- NEW
+
+
 class AccidentRecordOut(AccidentRecordBase):
     model_config = ConfigDict(from_attributes=True, validate_by_name=True)
+
     accident_id: str
     created_on: Optional[date] = Field(None, alias="created_on")
     managed_by_name: Optional[str] = Field(None, alias="managed_by_name")
-    # Note: createf on and managed by name were added by SHakthi for the record viewing readability.
-    # created_on, severity etc. can be present in raw DB data, but not required here.
+
+    # Output children with safe defaults
+    injuries: List[InjuryOut] = Field(default_factory=list)
+    treatments: List[TreatmentOut] = Field(default_factory=list)  # <-- NEW
+
+    # Note: created_on and managed_by_name were added for readability in record viewing.
