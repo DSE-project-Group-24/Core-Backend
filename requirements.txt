@@ -22,4 +22,5 @@ pyarrow
 # Testing dependencies
 requests
 pytest
+catboost
 scikit-learn==1.6.1
