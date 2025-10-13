@@ -168,6 +168,8 @@ def get_comprehensive_analytics_service1(filters: AccidentAnalyticsFilters1) -> 
         "Bystander expenditure per day",
         "Discharge Outcome",
         "First aid given at seen",
+        "Mode of traveling during accident",
+
     ]
 
     results = {}
@@ -205,3 +207,4 @@ def get_comprehensive_analytics_service1(filters: AccidentAnalyticsFilters1) -> 
             results[col] = {"Error": 0}
 
     return AccidentAnalyticsResponse1(results=results)
+
