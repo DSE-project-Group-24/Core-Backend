@@ -1,6 +1,7 @@
 from typing import Dict, Any, List, Optional
 from datetime import datetime
 from collections import defaultdict
+import traceback
 from app.models.gov_dash import (
     AccidentAnalyticsFilters1,
     AccidentAnalyticsResponse1
@@ -175,12 +176,15 @@ def get_comprehensive_analytics_service1(filters: AccidentAnalyticsFilters1) -> 
         try:
             print(f"Querying {col}...")
             
-            # Fetch filtered records
+            # Properly quote column names with spaces for SQL
+            quoted_col = f'"{col}"'
+            
+            # Fetch filtered records  
             response = supabase.table("Accident Record")\
-                .select(col)\
-                .gte("incident_at_date", str(filters.start_date))\
-                .lte("incident_at_date", str(filters.end_date))\
-                .eq("Severity", filters.severity)\
+                .select(quoted_col)\
+                .gte('"incident at date"', str(filters.start_date))\
+                .lte('"incident at date"', str(filters.end_date))\
+                .eq('"Severity"', filters.severity)\
                 .execute()
 
             # Count categories manually

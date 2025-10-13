@@ -36,7 +36,8 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-# Register routes
+
+
 app.include_router(auth_router, prefix="/auth", tags=["Users"])
 app.include_router(hospital_router, prefix="/hospital", tags=["Hospitals"])
 app.include_router(nurse_router, prefix="/nurse", tags=["Nurses"])
