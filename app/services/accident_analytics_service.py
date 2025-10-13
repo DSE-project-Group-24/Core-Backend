@@ -13,14 +13,17 @@ from app.models.analytics import (
 )
 from app.db import get_supabase
 
-def get_comprehensive_analytics_service(filters: AccidentAnalyticsFilters) -> AccidentAnalyticsResponse:
-    """Get comprehensive accident analytics - follows existing service pattern"""
+def get_comprehensive_analytics_with_summary_service(filters: AccidentAnalyticsFilters) -> Dict[str, Any]:
+    """
+    OPTIMIZED: Get both comprehensive analytics AND summary with single data fetch
+    This avoids duplicate expensive database calls
+    """
     supabase = get_supabase()
     
-    # Get filtered accident data
+    # SINGLE DATABASE CALL - fetch data once and reuse
     accident_data = _get_filtered_accident_data(supabase, filters)
     
-    # Generate all analytics
+    # Generate all analytics using the same data
     accident_chars = _get_accident_characteristics(accident_data)
     demographics = _get_demographics(accident_data)
     medical_factors = _get_medical_factors(accident_data)
@@ -29,7 +32,8 @@ def get_comprehensive_analytics_service(filters: AccidentAnalyticsFilters) -> Ac
     data_quality = _get_data_quality(accident_data)
     summary_stats = _get_summary_statistics(accident_data)
     
-    return AccidentAnalyticsResponse(
+    # Build comprehensive analytics response
+    comprehensive_analytics = AccidentAnalyticsResponse(
         accident_characteristics=accident_chars,
         demographics=demographics,
         medical_factors=medical_factors,
@@ -43,32 +47,37 @@ def get_comprehensive_analytics_service(filters: AccidentAnalyticsFilters) -> Ac
         generated_at=datetime.now(),
         data_period=_get_data_period(accident_data)
     )
-
-
-def get_accident_summary_service(hospital_id: str, start_date: Optional[date] = None, end_date: Optional[date] = None) -> Dict[str, Any]:
-    """Get accident summary for a specific hospital - uses existing _get_filtered_accident_data function"""
-    supabase = get_supabase()
     
-    # Create a filter with hospital_id and optional date range
-    filters = AccidentAnalyticsFilters(
-        hospital_id=hospital_id,
-        start_date=start_date,
-        end_date=end_date
-    )
-    
-    # Use the existing _get_filtered_accident_data function
-    accident_data = _get_filtered_accident_data(supabase, filters)
-    
-    # Compute statistics using existing function
-    summary_stats = _get_summary_statistics(accident_data)
-
-    return {
+    # Build summary using the same data
+    summary = {
         "total_accidents": summary_stats['total_records'],
         "peak_accident_hour": summary_stats['peak_hour'],
         "most_common_collision": summary_stats['common_collision'],
         "avg_income_impact": summary_stats['avg_income_change'],
         "generated_at": datetime.now().isoformat()
     }
+    
+    return {
+        "comprehensive_analytics": comprehensive_analytics,
+        "summary": summary,
+        "data_fetch_timestamp": datetime.now().isoformat(),
+        "total_records_processed": len(accident_data)
+    }
+
+def get_comprehensive_analytics_service(filters: AccidentAnalyticsFilters) -> AccidentAnalyticsResponse:
+    """Get comprehensive accident analytics - calls optimized function"""
+    result = get_comprehensive_analytics_with_summary_service(filters)
+    return result["comprehensive_analytics"]
+
+def get_accident_summary_service(hospital_id: str, start_date: Optional[date] = None, end_date: Optional[date] = None) -> Dict[str, Any]:
+    """Get accident summary - calls optimized function"""
+    filters = AccidentAnalyticsFilters(
+        hospital_id=hospital_id,
+        start_date=start_date,
+        end_date=end_date
+    )
+    result = get_comprehensive_analytics_with_summary_service(filters)
+    return result["summary"]
 
 
 def get_filter_options_service(hospital_id: str) -> Dict[str, Any]:
@@ -263,6 +272,7 @@ def _get_filtered_accident_data(supabase, filters: AccidentAnalyticsFilters):
             "p_discharge_outcome": filters.discharge_outcome
         }
     ).execute()
+    print(f"Hospital Id: {filters.hospital_id}")
     return response.data or []
 
 def _get_accident_characteristics(accident_data: List[Dict[str, Any]]) -> AccidentCharacteristics:
