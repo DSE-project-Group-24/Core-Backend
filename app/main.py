@@ -12,6 +12,7 @@ from app.routes.gov_routes import router as gov_router
 from app.routes.prediction_routes import router as prediction_router
 from app.routes.prediction_transferprobability import router as prediction_transferprobability_router
 from app.routes.accident_analytics_routes import router as analytics_router  
+from app.routes.transfer_routes import router as transfer_router
 from app.routes.discharge_outcome_routes import router as discharge_outcome_router
 from app.routes.hospital_stay_service_route import router as hospital_stay_service_router
 
@@ -54,6 +55,8 @@ app.include_router(hospital_stay_service_router, prefix="/predictions", tags=["H
 app.include_router(analytics_router, prefix="/analytics", tags=["Accident Analytics"])
 app.include_router(govDash_routes, prefix="/govDash", tags=["Government Dashboard"])
 
+# transer routes
+app.include_router(transfer_router, prefix="/transfers", tags=["Transfers"])
 
 @app.get("/_routes")
 def _routes():

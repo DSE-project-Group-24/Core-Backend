@@ -28,6 +28,11 @@ def get_all_hospitals_service():
     resp = supabase.table("Hospital").select("*").execute()
     return resp.data or []
 
+def list_hospitals ():
+    supabase = get_supabase()
+    resp = supabase.table("Hospital").select("hospital_id, name").execute()
+    return resp.data or []
+
 # Service: Get hospital by id
 def get_hospital_by_id_service(hospital_id: str):
     supabase = get_supabase()
