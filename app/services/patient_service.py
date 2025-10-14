@@ -97,7 +97,7 @@ def get_hospital_patients_service(hospital_id: str):
             # Add hospital_id to match your PatientOut schema
             patient_data["Hospital ID"] = hospital_id
             patients.append(patient_data)
-
+    print(f'Found {len(patients)} patients for hospital {hospital_id}:', patients)
     return patients
 
 
