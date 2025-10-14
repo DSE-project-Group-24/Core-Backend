@@ -13,7 +13,7 @@ from app.auth.dependencies import get_current_user
 
 router = APIRouter()
 
-@router.post("/discharge-outcome", response_model=DischargeOutcomePredictionResponse)
+@router.post("/discharge-outcome", response_model=DischargeOutcomePredictionResponse, dependencies=[Depends(get_current_user)])
 def predict_discharge_outcome(
     request: DischargeOutcomePredictionRequest,
     user=Depends(get_current_user)
