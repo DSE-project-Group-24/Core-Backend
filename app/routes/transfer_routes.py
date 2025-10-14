@@ -1,7 +1,13 @@
-from typing import Dict, Any, List
-from fastapi import APIRouter, Depends, HTTPException, Request
-from app.models.transfer import   TransferApprove, TransferReject, TransferCreateIn, TransferApproveIn
+# app/routes/transfer_routes.py
+from __future__ import annotations
+
+from typing import Any, Dict, List
+from fastapi import APIRouter, Depends
 from app.auth.dependencies import get_current_user
+from app.models.transfer import (
+    TransferCreateIn,
+    TransferApproveIn,
+)
 from app.services.transfer_service import (
     create_transfer_request_service,
     list_my_outgoing_transfers_service,
@@ -9,18 +15,20 @@ from app.services.transfer_service import (
     approve_transfer_service,
     reject_transfer_service,
 )
+
 router = APIRouter()
 
 
 @router.post("/", summary="Create a transfer request (nurse)")
 def create_transfer(
     body: TransferCreateIn,
-    user= Depends(get_current_user),
+    user: Dict[str, Any] = Depends(get_current_user),
 ):
     """
-    - Only a nurse who **currently manages** the accident may create the transfer.
-    - `from_hospital` is taken from the nurse's hospital (server-side).
-    - `approved_by` and `transfer time to second hospital` are **not** set here.
+    Create a transfer request:
+      - Only a nurse who currently manages the accident may create the transfer.
+      - `from_hospital` is derived from the current nurse (server-side).
+      - `approved_by` and `"transfer time to second hospital"` are NOT set here.
     """
     return create_transfer_request_service(
         accident_id=body.accident_id,
@@ -34,7 +42,7 @@ def list_outgoing_transfers(
     user: Dict[str, Any] = Depends(get_current_user),
 ) -> List[Dict[str, Any]]:
     """
-    Transfers created from the nurse's hospital.
+    List transfers created from the nurse's hospital (based on current user).
     """
     return list_my_outgoing_transfers_service(user=user)
 
@@ -44,7 +52,7 @@ def list_incoming_transfers_for_admin(
     user: Dict[str, Any] = Depends(get_current_user),
 ) -> List[Dict[str, Any]]:
     """
-    Pending transfers where `to_hospital` equals the admin's hospital.
+    List pending transfers where `to_hospital` equals the admin's hospital.
     """
     return list_incoming_transfers_for_admin_service(user=user)
 
@@ -56,10 +64,10 @@ def approve_transfer(
     user: Dict[str, Any] = Depends(get_current_user),
 ):
     """
-    Approves a transfer **atomically** (via SQL function `approve_transfer`):
+    Approve a transfer atomically (via SQL function `approve_transfer`):
       1) Reassigns Accident Record.managed_by to the selected nurse
       2) Fills `approved_by` and `"transfer time to second hospital"`
-      3) Inserts into `Hospital_Patient`
+      3) Inserts the patient–hospital association into `Hospital_Patient`
     """
     return approve_transfer_service(
         transfer_id=transfer_id,
@@ -75,7 +83,8 @@ def reject_transfer(
     user: Dict[str, Any] = Depends(get_current_user),
 ):
     """
-    Rejects a pending transfer (deletes the Transfer row).
+    Reject a pending transfer (deletes the `Transfer` row). No changes are made
+    to `Accident Record` or `Hospital_Patient`.
     """
     return reject_transfer_service(
         transfer_id=transfer_id,
