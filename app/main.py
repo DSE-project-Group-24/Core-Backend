@@ -1,4 +1,3 @@
-
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -12,9 +11,9 @@ from app.routes.medical_routes import router as medical_router
 from app.routes.gov_routes import router as gov_router
 from app.routes.prediction_routes import router as prediction_router
 from app.routes.prediction_transferprobability import router as prediction_transferprobability_router
-# from app.routes.hospital_stay_predictions_routes import router as hospital_stay_predictions_router
 from app.routes.accident_analytics_routes import router as analytics_router  
 from app.routes.discharge_outcome_routes import router as discharge_outcome_router
+from app.routes.hospital_stay_service_route import router as hospital_stay_service_router
 
 # from app.routes.govDash_routes import router as gov_dash_routes
 from app.routes.govDash_routes import router as govDash_routes 
@@ -37,7 +36,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-
 app.include_router(auth_router, prefix="/auth", tags=["Users"])
 app.include_router(hospital_router, prefix="/hospital", tags=["Hospitals"])
 app.include_router(nurse_router, prefix="/nurse", tags=["Nurses"])
@@ -49,8 +47,8 @@ app.include_router(gov_router, prefix="/gov/rules", tags=["Government"])
 app.include_router(prediction_router, prefix="/predictions", tags=["Predictions"])
 
 app.include_router(prediction_transferprobability_router, prefix="/predictions", tags=["Predictions"])
-#app.include_router(hospital_stay_predictions_router, prefix="/hospitalstay", tags=["Hospital Stay Predictions"])
 app.include_router(discharge_outcome_router, prefix="/predictions", tags=["Discharge Outcome Predictions"])
+app.include_router(hospital_stay_service_router, prefix="/predictions", tags=["Hospital Stay Predictions"])
 
 # Include analytics routes
 app.include_router(analytics_router, prefix="/analytics", tags=["Accident Analytics"])
