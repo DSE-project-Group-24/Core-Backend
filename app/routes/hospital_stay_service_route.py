@@ -1,11 +1,12 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 from typing import List, Dict, Any
+from app.auth.dependencies import get_current_user
 from app.services import hospital_stay_service
 
 router = APIRouter()
 
 
-@router.post('/hospital-stay-predict')
+@router.post('/hospital-stay-predict', dependencies=[Depends(get_current_user)])
 async def predict(payload: Dict[str, Any]):
     """Accepts body with `data` key containing a list of records.
 
