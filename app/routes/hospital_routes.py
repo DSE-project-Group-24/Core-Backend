@@ -8,7 +8,7 @@ from app.services.hospital_staff_service import (
     add_doctor_to_hospital_service,
     add_nurse_to_hospital_service,
     get_doctors_count_service,
-    get_nurses_count_service, get_patients_count_service
+    get_nurses_count_service, get_patients_count_service, get_nurses_list_service
 
 )
 from app.services.hospital_service import (
@@ -82,6 +82,11 @@ async def get_nurses_count(hospital_id: str = Depends(get_user_hospital_id)):
 async def get_patients_count(hospital_id: str = Depends(get_user_hospital_id)):
     """Get the count of all patients in the logged-in hospital administrator's hospital"""
     return get_patients_count_service(hospital_id)
+
+@router.get("/nurses-list", dependencies=[Depends(hospital_admin_required)])
+async def get_nurses_list(hospital_id: str = Depends(get_user_hospital_id)):
+    """Get the list of all nurses in the logged-in hospital administrator's hospital"""
+    return get_nurses_list_service(hospital_id)
 
 # Routes for access hospitals to goverment persons
 
