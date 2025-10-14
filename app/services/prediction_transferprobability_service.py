@@ -17,14 +17,16 @@ model_path = os.path.join(project_root, "Core-Backend", "trained_models", "Trans
 try:
     if os.path.exists(model_path):
         model = joblib.load(model_path)
-        print(f"✅ Model loaded successfully from {model_path}")
+        display_path = os.path.join("trained_models", "Transfer_Probablity_model.pkl")
+        print(f"✅ Model loaded from {display_path}")
     else:
         print(f"Model file not found. Searched at: {model_path}")
         # Try alternative path
         alt_model_path = os.path.join(os.path.dirname(os.path.dirname(current_dir)), "trained_models", "Transfer_Probablity_model.pkl")
         if os.path.exists(alt_model_path):
             model = joblib.load(alt_model_path)
-            print(f"✅ Model loaded successfully from alternative path: {alt_model_path}")
+            display_path = os.path.join("trained_models", "Transfer_Probablity_model.pkl")
+            print(f"[✅ Model loaded from {display_path}]")
         else:
             raise FileNotFoundError(f"Model file not found at {model_path} or {alt_model_path}")
 except Exception as e:

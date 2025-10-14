@@ -154,6 +154,7 @@ TOP_FEATURES = [
 def load_model(path: str):
     m = CatBoostClassifier()
     m.load_model(path)
+    print("✅ Model loaded from", path)
     return m
 
 
