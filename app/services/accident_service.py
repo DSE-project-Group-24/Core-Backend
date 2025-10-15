@@ -314,7 +314,7 @@ def get_accident_records_by_patient_service(patient_id: str, user):
     if accident_ids:
         inj_resp = (
             supabase.table(INJURIES_TABLE)
-            .select("accident_id, injury_no, site_of_injury, type_of_injury, side, investigation_done, severity")
+            .select("accident_id, injury_no, site_of_injury, type_of_injury, side, investigation_done, severity, investigation_done")
             .in_("accident_id", accident_ids)
             .order("injury_no", desc=False)
             .execute()
