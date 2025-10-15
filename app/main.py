@@ -27,7 +27,7 @@ origins = [
     "http://localhost:3000",  
     "http://localhost:5174",
     "http://127.0.0.1:5173",
-    "https://roadaccidentcaresystem.vercel.app"
+    "https://roadaccidentcaresystem.vercel.app/"
 ]
 
 app.add_middleware(
@@ -59,6 +59,15 @@ app.include_router(govDash_routes, prefix="/govDash", tags=["Government Dashboar
 # transer routes
 app.include_router(transfer_router, prefix="/transfers", tags=["Transfers"])
 
+
+# Add preflight OPTIONS handler (important for Render)
+@app.options("/{rest_of_path:path}")
+async def preflight_handler(rest_of_path: str = None):
+    return {"message": "OK"}
+
+
+
 @app.get("/_routes")
 def _routes():
     return [{"path": r.path, "methods": list(getattr(r, "methods", []))} for r in app.routes]
+
