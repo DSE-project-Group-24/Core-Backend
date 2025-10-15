@@ -46,7 +46,7 @@ def _get_user_role_and_hospital(user_id: str) -> Tuple[Optional[str], Optional[s
         )
         if role_r.data is None and getattr(role_r, "error", None):
             _db_error(role_r, "Failed to load user role")
-        role = (role_r.data or {}).get("role") or "admin"
+        role = (role_r.data or {}).get("role") or "hospital_administrator"
         return role, str(admin_r.data[0]["hospital_id"])
 
     # Try Nurse
@@ -196,7 +196,7 @@ def list_incoming_transfers_for_admin_service(user: Dict[str, Any]) -> List[Dict
         return []
 
     role, admin_hospital_id = _get_user_role_and_hospital(user_id)
-    if role != "admin" or not admin_hospital_id:
+    if role != "hospital_administrator" or not admin_hospital_id:
         return []
 
     r = (
@@ -241,7 +241,7 @@ def approve_transfer_service(
         raise HTTPException(status_code=403, detail="Invalid user")
 
     role, admin_hospital_id = _get_user_role_and_hospital(admin_id)
-    if role != "admin":
+    if role != "hospital_administrator":
         raise HTTPException(status_code=403, detail="Only admins can approve transfers.")
 
     # Optional: verify transfer belongs to this admin's hospital before RPC
@@ -265,7 +265,7 @@ def approve_transfer_service(
     params = {
         "p_transfer_id": transfer_id,
         "p_admin_id": admin_id,
-        "p_new_nurse_id": new_nurse_user_id,
+        "p_new_managed_by": new_nurse_user_id,
         "p_transfer_time": transfer_time_category,
     }
     rpc = supabase.rpc("approve_transfer", params).execute()
@@ -308,8 +308,8 @@ def reject_transfer_service(
         raise HTTPException(status_code=403, detail="Invalid user")
 
     role, admin_hospital_id = _get_user_role_and_hospital(admin_id)
-    if role != "admin" or not admin_hospital_id:
-        raise HTTPException(status_code=403, detail="Only admins can reject transfers.")
+    if role != "hospital_administrator" and role != "nurse":
+        raise HTTPException(status_code=403, detail="Only admins/nurses can reject transfers.")
 
     t = (
         supabase.table(TRANSFER_TABLE)
@@ -326,7 +326,6 @@ def reject_transfer_service(
 
     if tr.get("approved_by") is not None:
         raise HTTPException(status_code=400, detail="Transfer already approved; cannot reject.")
-    _ensure_same_hospital(admin_hospital_id, tr.get("to_hospital"), "You can only reject transfers to your hospital.")
 
     d = (
         supabase.table(TRANSFER_TABLE)
