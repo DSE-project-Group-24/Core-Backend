@@ -75,31 +75,41 @@ def edit_patient_service(patient_id: str, patient: PatientUpdate):
 #     resp = supabase.table("Patient").select("*").execute()
 #     return resp.data or []
 
-
 def get_hospital_patients_service(hospital_id: str):
     supabase = get_supabase()
 
-    # Join Hospital_Patient with Patient table directly
-    resp = (
-        supabase.table("Hospital_Patient")
-        .select("patient_id, Patient(*)")   # join Patient table
-        .eq("hospital_id", hospital_id)
-        .execute()
-    )
+    all_patients = []
+    batch_size = 1000
+    offset = 0
 
-    if not resp.data:
-        return []
+    while True:
+        # Fetch records in batches of 1000
+        resp = (
+            supabase.table("Hospital_Patient")
+            .select("patient_id, Patient(*)")
+            .eq("hospital_id", hospital_id)
+            .range(offset, offset + batch_size - 1)
+            .execute()
+        )
 
-    patients = []
-    for item in resp.data:
-        patient_data = item.get("Patient")
-        if patient_data:
-            # Add hospital_id to match your PatientOut schema
-            patient_data["Hospital ID"] = hospital_id
-            patients.append(patient_data)
-    print(f'Found {len(patients)} patients for hospital {hospital_id}:', patients)
-    return patients
+        data = resp.data or []
 
+        print(f"Fetched batch: {len(data)} records (offset {offset})")
+
+        if not data:
+            break  # Stop when no more data returned
+
+        for item in data:
+            patient_data = item.get("Patient")
+            if patient_data:
+                patient_data["Hospital ID"] = hospital_id
+                all_patients.append(patient_data)
+
+        # Move to next batch
+        offset += batch_size
+
+    print(f"✅ Total patients fetched for hospital {hospital_id}: {len(all_patients)}")
+    return all_patients
 
 def get_patient_by_id_service(patient_id: str):
     supabase = get_supabase()
