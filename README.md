@@ -51,7 +51,7 @@ Core-Backend/
 ├── venv # Virtual environment
 ├── .gitignore
 └── .env # Environment variables (not tracked in git)
-
+```
 ---
 
 ## Important features
