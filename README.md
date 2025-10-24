@@ -9,6 +9,7 @@ This README highlights the current functionality and explains how to run and tes
 ## Quick links (open these files to inspect implementation)
 
 ## Project structure
+```
 
 Core-Backend/
 │
