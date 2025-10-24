@@ -131,7 +131,7 @@ If environment variables are missing, the app raises at startup (see [app/db.py]
 Start the server:
 
 ```bash
-uvicorn app.main:app --reload
+uvicorn app.main:app --reload --port 8080
 ```
 
 The API will be available at http://127.0.0.1:8000. You can also run via the included Procfile on platforms that support it: [Procfile](Procfile).
