@@ -8,19 +8,52 @@ This README highlights the current functionality and explains how to run and tes
 
 ## Quick links (open these files to inspect implementation)
 
-- Main app: [app/main.py](app/main.py)
-- Database client: [app/db.py](app/db.py)
-- Discharge outcome predictor: [`DischargeOutcomePredictor`](app/services/discharge_outcome_service.py) — [app/services/discharge_outcome_service.py](app/services/discharge_outcome_service.py) and routes [app/routes/discharge_outcome_routes.py](app/routes/discharge_outcome_routes.py)
-- Hospital stay prediction: [`predict_records`](app/services/hospital_stay_service.py) — [app/services/hospital_stay_service.py](app/services/hospital_stay_service.py)
-- SARIMA forecasting: [`get_forecast_service`](app/services/prediction_service.py) — [app/services/prediction_service.py](app/services/prediction_service.py) and routes [app/routes/prediction_routes.py](app/routes/prediction_routes.py)
-- Government rules engine: [`GovRulesEngine`](app/services/gov_rules_service.py) — [app/services/gov_rules_service.py](app/services/gov_rules_service.py) and routes [app/routes/gov_routes.py](app/routes/gov_routes.py)
-- Transfer endpoints and services: [app/routes/transfer_routes.py](app/routes/transfer_routes.py)
-- Pre-trained models: [trained_models/catboost_stay_classifier_v2_with_feature_15.cbm](trained_models/catboost_stay_classifier_v2_with_feature_15.cbm), [trained_models/catboost_top25_model.cbm](trained_models/catboost_top25_model.cbm)
-- Tests / runners: [tests/simple_test_runner.py](tests/simple_test_runner.py), [tests/run_functional_tests.py](tests/run_functional_tests.py)
+## Project structure
+
+Core-Backend/
+│
+├── app/ # Main application package
+│ ├── main.py # FastAPI app entrypoint
+│ ├── db.py # Supabase connection setup
+│ ├── models/ # Pydantic models
+│ │ ├── user.py
+│ │ ├── patient.py
+│ │ ├── hospital.py
+│ │ ├── hospital_staff.py
+│ │ ├── medical.py
+│ │ └── accident.py
+│ ├── routes/ # API endpoints
+│ │ ├── auth_routes.py # Login, register, token endpoints
+│ │ ├── hospital_routes.py
+│ │ ├── nurse_routes.py
+│ │ ├── doctor_routes.py
+│ │ ├── patient_routes.py
+│ │ ├── accident_routes.py
+│ │ └── medical_routes.py
+│ ├── services/ # Business logic
+│ │ ├── auth_service.py
+│ │ ├── hospital_service.py
+│ │ ├── hospital_staff_service.py
+│ │ ├── nurse_service.py
+│ │ ├── doctor_service.py
+│ │ ├── patient_service.py
+│ │ ├── accident_service.py
+│ │ └── medical_service.py
+│ ├── auth/ # Authentication dependencies
+│ │ ├── dependencies.py
+│ │ └── hospital_dependency.py
+│ └── utils/ # Utility functions
+│ ├── auth.py
+│ └── serializers.py
+├── requirements.txt # Project dependencies
+├── README.md
+├── venv # Virtual environment
+├── .gitignore
+└── .env # Environment variables (not tracked in git)
 
 ---
 
-## What’s new / Important features
+## Important features
 
 - Discharge outcome predictions via a CatBoost classifier with endpoints and model health/info endpoints (see [`DischargeOutcomePredictor`](app/services/discharge_outcome_service.py)).
 - Hospital stay length prediction endpoint using CatBoost (see [`predict_records`](app/services/hospital_stay_service.py)).
@@ -38,11 +71,40 @@ This README highlights the current functionality and explains how to run and tes
 - Supabase project (URL and API key)
 - Recommended: create and activate a venv
 
-Install dependencies:
+Install dependencies and create a virtual environment before running the project. Example commands are below.
 
-```bash
+Windows (PowerShell):
+
+```powershell
+# create a venv named .venv
+python -m venv .venv
+
+# activate the venv (PowerShell)
+.\.venv\Scripts\Activate.ps1
+
+# upgrade pip and install requirements
+python -m pip install --upgrade pip
 pip install -r requirements.txt
 ```
+
+Windows (cmd.exe):
+
+```cmd
+python -m venv .venv
+.\.venv\Scripts\activate.bat
+pip install -r requirements.txt
+```
+
+macOS / Linux (bash / zsh):
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+python -m pip install --upgrade pip
+pip install -r requirements.txt
+```
+
+Once dependencies are installed the app can be started (see "Run locally").
 
 ---
 
@@ -111,9 +173,6 @@ API docs:
 
   - /transfers endpoints for creating and approving transfer requests ([app/routes/transfer_routes.py](app/routes/transfer_routes.py))
 
-- Utility
-  - GET /\_routes — list registered routes (helps debugging)
-
 ---
 
 ## Models and files
@@ -134,4 +193,3 @@ If model files are missing, the prediction services return a clear error or an e
 - Auth failures — ensure Supabase is reachable and user accounts exist or register via the admin endpoints.
 
 ---
-
