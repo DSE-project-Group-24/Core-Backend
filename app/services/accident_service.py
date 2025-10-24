@@ -100,14 +100,12 @@ def create_accident_record_service(accident: AccidentRecordCreate, user):
 
 
 
-# ... import your models and _empty_strings_to_unknown as you already do ...
 
-TABLE = "Accident Record"  # your existing constant
+TABLE = "Accident Record" 
 
 def edit_accident_record_service(accident_id: str, accident: AccidentRecordUpdate, user):
     supabase = get_supabase()
 
-    # 1) Fetch existing + permission checks (unchanged)
     existing = (
         supabase.table(TABLE)
         .select("*")
@@ -128,7 +126,6 @@ def edit_accident_record_service(accident_id: str, accident: AccidentRecordUpdat
     if str(rec.get("managed_by")) != str(user_id):
         raise HTTPException(status_code=403, detail="You are not allowed to edit this record.")
 
-    # 2) Build payload; split out injuries & treatments
     payload: Dict[str, Any] = accident.model_dump(
         mode="json", by_alias=True, exclude_unset=True
     )
@@ -141,7 +138,6 @@ def edit_accident_record_service(accident_id: str, accident: AccidentRecordUpdat
 
     payload = _empty_strings_to_unknown(payload)
 
-    # 3) Update the accident record if needed
     if payload:
         resp = (
             supabase.table(TABLE)
@@ -153,7 +149,6 @@ def edit_accident_record_service(accident_id: str, accident: AccidentRecordUpdat
             raise HTTPException(status_code=404, detail="Accident record not updated.")
         rec = resp.data[0]  # updated base record
 
-    # 4) Injuries (full replacement if provided)
     #print("Incoming injuries:")
     #print(incoming_injuries)
     if incoming_injuries != []:

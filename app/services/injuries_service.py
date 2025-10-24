@@ -15,11 +15,8 @@ except Exception:  # fallback if import path differs
 
 Severity = Literal["severe", "moderate", "unknown"]
 
-# Make sure this matches your actual table *exactly*.
-# You previously said "Injuries". If the real table is Injuries, set TABLE = "Injuries".
 TABLE = "Injury"
 
-# Column with a space must be quoted in selects/updates
 INVESTIGATION_COL = '"investigation_done"'
 
 _model_cache = None
@@ -201,9 +198,6 @@ def delete_injury(accident_id: str, injury_no: int) -> None:
             .eq("injury_no", injury_no)
             .execute()
         )
-        # Some Supabase setups return [] on successful delete; treat as OK.
-        # If you want to ensure something was deleted, you can check r.count with return= 'representation'
-        # but default delete doesn’t return count.
         return
     except PostgrestAPIError as e:
         raise HTTPException(status_code=500, detail=str(e))
